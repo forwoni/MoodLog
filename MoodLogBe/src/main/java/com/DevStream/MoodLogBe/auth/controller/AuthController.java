@@ -1,5 +1,7 @@
 package com.DevStream.MoodLogBe.auth.controller;
 
+import com.DevStream.MoodLogBe.auth.dto.LoginRequestDto;
+import com.DevStream.MoodLogBe.auth.dto.LoginResponseDto;
 import com.DevStream.MoodLogBe.auth.dto.SignupRequestDto;
 import com.DevStream.MoodLogBe.auth.dto.SignupResponseDto;
 import com.DevStream.MoodLogBe.auth.service.AuthService;
@@ -26,4 +28,13 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .body(dto);
     }
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponseDto> login(
+            @Valid @RequestBody LoginRequestDto req
+    ){
+        LoginResponseDto tokens = authService.login(req);
+        return ResponseEntity
+                .ok(tokens);
+    }
+
 }
