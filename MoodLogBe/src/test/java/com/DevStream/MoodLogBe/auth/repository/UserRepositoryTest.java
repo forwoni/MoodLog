@@ -66,4 +66,33 @@ class UserRepositoryTest {
 
     }
 
+    @Test
+    @DisplayName("existsByUsername(), existsByEmail() 커스텀 메소드 검증")
+    void existsByUsernameAndEmail() {
+        // given
+        User user = createTestUser();
+        userRepository.save(user);
+
+        // then
+        assertThat(userRepository.existsByUsername("testUser")).isTrue();
+        assertThat(userRepository.existsByUsername("no-such-user")).isFalse();
+
+        assertThat(userRepository.existsByEmail("test@hufs.ac.kr")).isTrue();
+        assertThat(userRepository.existsByEmail("none@example.com")).isFalse();
+    }
+
+    @Test
+    @DisplayName("delete() 후 findById() 시 Optional.empty 반환")
+    void deleteRemovesEntity() {
+        // given
+        User user = createTestUser();
+        User saved = userRepository.save(user);
+
+        // when
+        userRepository.delete(saved);
+
+        // then
+        assertThat(userRepository.findById(saved.getId())).isEmpty();
+    }
+
 }
