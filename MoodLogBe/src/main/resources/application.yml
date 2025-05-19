@@ -1,13 +1,13 @@
 spring:
   datasource:
-    url: jdbc:mysql://<HOST>:<PORT>/<DB_NAME>
-    username: <USERNAME>
-    password: <PASSWORD>
+    url: jdbc:mysql://localhost:3306/moodlog?serverTimezone=UTC
+    username: root
+    password: 1234
   jpa:
     hibernate:
       ddl-auto: update
 
 jwt:
-  secret: my-very-secret-key-that-is-at-least-32-chars   # HS256 서명 키 (외부에서 관리)
+  secret: aVeryLongRandomSecretKeyThatIsAtLeast32Chars!!   # HS256 서명 키 (외부에서 관리)
   access-token-expiry: 900000                           # Access Token 만료시간 (밀리초) = 15분
   refresh-token-expiry: 604800000                       # Refresh Token 만료시간 (밀리초) = 7일
