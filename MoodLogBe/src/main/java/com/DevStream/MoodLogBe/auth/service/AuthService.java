@@ -21,10 +21,10 @@ public class AuthService {
     public SignupResponseDto signup(SignupRequestDto req){
         // 1) 이메일/username 중복 체크
         if (userRepository.existsByEmail(req.getEmail())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new IllegalArgumentException("이미 사용중인 이메일입니다.");
         }
         if (userRepository.existsByUsername(req.getUsername())){
-            throw new IllegalArgumentException("이미 사용 중인 사용자명입니다.");
+            throw new IllegalArgumentException("이미 사용중인 이름입니다.");
         }
 
         // 2) 비밀번호 암호화

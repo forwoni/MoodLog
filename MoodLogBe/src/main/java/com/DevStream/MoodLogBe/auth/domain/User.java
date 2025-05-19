@@ -2,10 +2,7 @@ package com.DevStream.MoodLogBe.auth.domain;
 
 import com.DevStream.MoodLogBe.post.domain.Post;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +14,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @Table(name = "users")
+@Setter
 
 public class User {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
