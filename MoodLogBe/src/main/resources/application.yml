@@ -6,3 +6,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+
+jwt:
+  secret: my-very-secret-key-that-is-at-least-32-chars   # HS256 서명 키 (외부에서 관리)
+  access-token-expiry: 900000                           # Access Token 만료시간 (밀리초) = 15분
+  refresh-token-expiry: 604800000                       # Refresh Token 만료시간 (밀리초) = 7일
