@@ -36,5 +36,6 @@ public class User {
     @Column(name = "role")
     private Set<String> roles = new HashSet<>();
 
+    @Transient
     private List<Post> posts;
 }
