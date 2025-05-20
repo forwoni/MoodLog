@@ -32,4 +32,10 @@ public class Post {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public void update(String title, String content, Boolean autoSaved){
+        this.title = title;
+        this.content = content;
+        this.autoSaved = autoSaved;
+    }
 }
