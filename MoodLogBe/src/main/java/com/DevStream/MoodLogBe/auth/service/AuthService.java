@@ -1,14 +1,18 @@
 package com.DevStream.MoodLogBe.auth.service;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
+import com.DevStream.MoodLogBe.auth.dto.LoginRequestDto;
+import com.DevStream.MoodLogBe.auth.dto.LoginResponseDto;
 import com.DevStream.MoodLogBe.auth.dto.SignupRequestDto;
 import com.DevStream.MoodLogBe.auth.dto.SignupResponseDto;
 import com.DevStream.MoodLogBe.auth.repository.UserRepository;
+import com.DevStream.MoodLogBe.auth.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -16,6 +20,7 @@ import java.util.Set;
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public SignupResponseDto signup(SignupRequestDto req){
@@ -42,5 +47,23 @@ public class AuthService {
 
         // 4) 응답 DTO
         return new SignupResponseDto(saved.getId(), saved.getUsername(), saved.getEmail());
+    }
+
+    public LoginResponseDto login(LoginRequestDto req) {
+        User user = userRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("등록되지 않은 이메일입니다."));
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        String accessToken  = jwtUtil.generateAccessToken(
+                user.getUsername(),
+                Map.of("roles", user.getRoles())
+        );
+        String refreshToken = jwtUtil.generateRefreshToken(
+                user.getUsername()
+        );
+
+        return new LoginResponseDto(accessToken, refreshToken);
     }
 }
