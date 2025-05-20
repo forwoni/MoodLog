@@ -1,9 +1,6 @@
 package com.DevStream.MoodLogBe.auth.controller;
 
-import com.DevStream.MoodLogBe.auth.dto.LoginRequestDto;
-import com.DevStream.MoodLogBe.auth.dto.LoginResponseDto;
-import com.DevStream.MoodLogBe.auth.dto.SignupRequestDto;
-import com.DevStream.MoodLogBe.auth.dto.SignupResponseDto;
+import com.DevStream.MoodLogBe.auth.dto.*;
 import com.DevStream.MoodLogBe.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +32,14 @@ public class AuthController {
         LoginResponseDto tokens = authService.login(req);
         return ResponseEntity
                 .ok(tokens);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshResponseDto> refresh(
+            @RequestBody RefreshRequestDto req
+    ){
+        RefreshResponseDto tokens = authService.refresh(req);
+        return ResponseEntity.ok(tokens);
     }
 
 }
