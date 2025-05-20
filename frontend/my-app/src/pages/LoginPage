@@ -1,0 +1,79 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log({ email, password, rememberMe });
+
+    // 실제 로그인 로직 (추후 API 연동 예정)
+    navigate('/main');
+  };
+
+  return (
+    <div className="w-screen h-screen flex items-center justify-center bg-gray-300 overflow-hidden">
+      <div className="w-[1440px] h-[1024px] flex items-center justify-center">
+        <form
+          onSubmit={handleLogin}
+          className="w-[400px] bg-white rounded-2xl shadow-md px-10 py-12"
+        >
+          {/* 타이틀 */}
+          <h2 className="text-3xl font-extrabold text-black text-center mb-10">
+            Mood Log
+          </h2>
+
+          {/* 이메일 */}
+          <input
+            type="email"
+            placeholder="이메일 주소"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-3 mb-4 border border-gray-300 rounded outline-none placeholder-gray-400"
+            required
+          />
+
+          {/* 비밀번호 */}
+          <input
+            type="password"
+            placeholder="비밀번호"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 mb-6 border border-gray-300 rounded outline-none placeholder-gray-400"
+            required
+          />
+
+          {/* 로그인 버튼 */}
+          <button
+            type="submit"
+            className="w-full py-3 border-2 border-black rounded-full font-bold text-black bg-white hover:bg-gray-100 transition"
+          >
+            로그인
+          </button>
+
+          {/* 하단 옵션 */}
+          <div className="flex justify-between items-center text-sm text-black mt-6">
+            <label>
+              <input
+                type="checkbox"
+                className="mr-1"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              아이디 저장
+            </label>
+            <a href="/register" className="hover:underline font-medium">
+              회원가입
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default LoginPage;
