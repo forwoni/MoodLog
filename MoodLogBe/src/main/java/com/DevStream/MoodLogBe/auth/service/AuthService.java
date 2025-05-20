@@ -64,9 +64,18 @@ public class AuthService {
         String refreshToken = jwtUtil.generateRefreshToken(
                 user.getUsername()
         );
+        RefreshToken entity = new RefreshToken(
+                null,
+                user.getUsername(),
+                refreshToken,
+                Instant.now().plusMillis(jwtUtil.getRefreshExpiry())
+        );
+        refreshRepo.save(entity);
 
         return new LoginResponseDto(accessToken, refreshToken);
     }
+
+    @Transactional
     public RefreshResponseDto refresh(RefreshRequestDto req){
         //
         String incoming = req.refreshToken();
