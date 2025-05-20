@@ -6,7 +6,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-
+logging:
+  level:
+    root: INFO
+    org.springframework.security: TRACE
+    com.DevStream.MoodLogBe: DEBUG
 jwt:
   secret: aVeryLongRandomSecretKeyThatIsAtLeast32Chars!!   # HS256 서명 키 (외부에서 관리)
   access-token-expiry: 900000                           # Access Token 만료시간 (밀리초) = 15분
