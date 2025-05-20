@@ -3,7 +3,9 @@ package com.DevStream.MoodLogBe.auth.service;
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.auth.dto.SignupRequestDto;
 import com.DevStream.MoodLogBe.auth.dto.SignupResponseDto;
+import com.DevStream.MoodLogBe.auth.repository.RefreshTokenRepository;
 import com.DevStream.MoodLogBe.auth.repository.UserRepository;
+import com.DevStream.MoodLogBe.auth.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,13 +22,24 @@ public class AuthServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private JwtUtil jwtUtil;
+
     private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         // AuthService 생성 시 BCryptPasswordEncoder 주입
-        authService = new AuthService(userRepository, passwordEncoder);
+        authService = new AuthService(
+                userRepository,
+                passwordEncoder,
+                jwtUtil,
+                refreshTokenRepository
+        );
     }
 
     @Test
