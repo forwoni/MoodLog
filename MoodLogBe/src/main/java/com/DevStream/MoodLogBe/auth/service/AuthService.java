@@ -67,7 +67,7 @@ public class AuthService {
 
         return new LoginResponseDto(accessToken, refreshToken);
     }
-    public RefreshRequestDto refresh(RefreshRequestDto req){
+    public RefreshResponseDto refresh(RefreshRequestDto req){
         //
         String incoming = req.refreshToken();
         if (!jwtUtil.validateToken(incoming)){

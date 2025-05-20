@@ -92,4 +92,12 @@ public class JwtUtil {
         return parseClaims(token).getExpiration();
     }
 
+    public long getAccessExpiry(){
+        return jwtProperties.getAccessTokenExpiry();
+    }
+
+    public long getRefreshExpiry() {
+        return jwtProperties.getRefreshTokenExpiry();
+    }
+
 }
