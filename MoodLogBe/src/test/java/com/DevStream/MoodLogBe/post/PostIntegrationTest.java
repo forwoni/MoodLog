@@ -91,6 +91,31 @@ public class PostIntegrationTest {
                 .andExpect(jsonPath("$.title").value("Test Title"))
                 .andExpect(jsonPath("$.viewCount").value(1));
 
-        // 이후 댓글 작성, 좋아요 toggle 흐름도 이어서 작성 예정
+        // 3. 댓글 작성
+        mockMvc.perform(post("/api/posts/" + post.getId() + "/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\": \"첫 댓글입니다!\"}"))
+                .andExpect(status().isCreated());
+
+        // 4. 게시글 다시 조회해서 댓글 포함 여부 확인
+        mockMvc.perform(get("/api/posts/" + post.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comments[0].content").value("첫 댓글입니다!"));
+
+        // 5. 좋아요 토글 (등록)
+        mockMvc.perform(post("/api/posts/" + post.getId() + "/like"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/posts/" + post.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likeCount").value(1));
+
+        // 6. 좋아요 토글 (취소)
+        mockMvc.perform(post("/api/posts/" + post.getId() + "/like"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/posts/" + post.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.likeCount").value(0));
     }
 }

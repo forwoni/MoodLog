@@ -30,6 +30,8 @@ public class CommentService {
                 .post(post)
                 .build();
 
+        post.getComments().add(comment);
+
         commentRepository.save(comment);
     }
 

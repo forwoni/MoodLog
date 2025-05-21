@@ -26,7 +26,7 @@ public class PostLikeService {
 
         Optional<PostLike> existing = postLikeRepository.findByPostAndUser(post, user);
 
-        if (existing != null) {
+        if (existing.isPresent()) {
             postLikeRepository.delete(existing.get());
             post.decreaseLikeCount();
             return false; // 좋아요 취소

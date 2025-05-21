@@ -19,7 +19,7 @@ public class CommentController {
     private final CommentService commentService;
 
     @PostMapping
-    public ResponseEntity<Void> craete(@PathVariable Long postId,
+    public ResponseEntity<Void> create(@PathVariable Long postId,
                                        @RequestBody CommentRequestDto dto,
                                        @AuthenticationPrincipal CustomUserDetails userDetails){
         commentService.create(postId, dto, userDetails.getUser());
