@@ -1,9 +1,18 @@
-export default function App() {
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LandingPage from '../frontend/my-app/src/pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
+function App() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold text-blue-600">
-        시작페이지는 App.tsx에다 만드시면 됩니다!
-      </h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
+
+export default App;

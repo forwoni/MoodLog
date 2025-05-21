@@ -1,18 +1,14 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({ email, password, rememberMe });
-
-    // 실제 로그인 로직 (추후 API 연동 예정)
-    navigate('/main');
+    alert('로그인 시도!');
   };
 
   return (
