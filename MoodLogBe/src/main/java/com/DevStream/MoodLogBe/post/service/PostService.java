@@ -1,6 +1,7 @@
 package com.DevStream.MoodLogBe.post.service;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
+import com.DevStream.MoodLogBe.comment.dto.CommentResponseDto;
 import com.DevStream.MoodLogBe.post.domain.Post;
 import com.DevStream.MoodLogBe.post.dto.PostRequestDto;
 import com.DevStream.MoodLogBe.post.dto.PostResponseDto;
@@ -10,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -29,7 +31,9 @@ public class PostService {
                 dto.content(),
                 dto.autoSaved(),
                 null,
-                null
+                null,
+                0,
+                new ArrayList<>()
         );
         postRepository.save(post);
     }
@@ -43,7 +47,9 @@ public class PostService {
                         post.getAutoSaved(),
                         post.getAuthor().getUsername(),
                         post.getCreatedAt(),
-                        post.getUpdatedAt()
+                        post.getUpdatedAt(),
+                        post.getViewCount(),
+                        List.of()
                 ))
                 .toList();
     }
@@ -52,6 +58,18 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("게시글 없음"));
 
+        post.increaseViewCount();
+
+        List<CommentResponseDto> commentDtos = post.getComments().stream()
+                .map(comment -> new CommentResponseDto(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getAuthor().getUsername(),
+                        comment.getCreatedAt()
+                ))
+                .toList();
+
+
         return new PostResponseDto(
                 post.getId(),
                 post.getTitle(),
@@ -59,7 +77,9 @@ public class PostService {
                 post.getAutoSaved(),
                 post.getAuthor().getUsername(),
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                post.getViewCount(),
+                commentDtos
         );
     }
 
