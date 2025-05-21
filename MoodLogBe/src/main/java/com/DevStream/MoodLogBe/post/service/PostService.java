@@ -8,6 +8,7 @@ import com.DevStream.MoodLogBe.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -62,6 +63,7 @@ public class PostService {
         );
     }
 
+    @Transactional
     public void update(Long id, PostRequestDto dto, User user) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("게시글 없음"));
