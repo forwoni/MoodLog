@@ -7,6 +7,8 @@ import com.DevStream.MoodLogBe.post.dto.PostRequestDto;
 import com.DevStream.MoodLogBe.post.dto.PostResponseDto;
 import com.DevStream.MoodLogBe.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -106,5 +108,38 @@ public class PostService {
             throw new AccessDeniedException("삭제 권한 없음");
 
         postRepository.delete(post);
+    }
+    public Page<PostResponseDto> getPostsByUsername(String username, Pageable pageable, String sortBy) {
+        Page<Post> posts;
+
+        switch (sortBy) {
+            case "like":
+                posts = postRepository.findByAuthorUsernameOrderByLikeCountDesc(username, pageable);
+                break;
+            case "comment":
+                posts = postRepository.findByAuthorUsernameOrderByCommentCountDesc(username, pageable);
+                break;
+            default:
+                posts = postRepository.findByAuthorUsernameOrderByCreatedAtDesc(username, pageable);
+                break;
+        }
+
+        return posts.map(post -> new PostResponseDto(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getAutoSaved(),
+                post.getAuthor().getUsername(),
+                post.getCreatedAt(),
+                post.getUpdatedAt(),
+                post.getViewCount(),
+                post.getLikeCount(),
+                post.getComments().stream().map(comment -> new CommentResponseDto(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getAuthor().getUsername(),
+                        comment.getCreatedAt()
+                )).toList()
+        ));
     }
 }
