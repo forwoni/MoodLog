@@ -1,6 +1,7 @@
 package com.DevStream.MoodLogBe.post.domain;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
+import com.DevStream.MoodLogBe.comment.domain.Comment;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -35,6 +38,9 @@ public class Post {
 
     @Column(nullable = false)
     private int viewCount = 0;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Comment> comments = new ArrayList<>();
 
     public void update(String title, String content, Boolean autoSaved){
         this.title = title;
