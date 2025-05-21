@@ -14,5 +14,6 @@ public record PostResponseDto(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         int viewCount,
+        int likeCount,
         List<CommentResponseDto> comments
 ) {}
