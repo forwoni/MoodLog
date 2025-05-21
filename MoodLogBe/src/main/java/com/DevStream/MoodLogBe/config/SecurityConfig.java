@@ -35,12 +35,11 @@ public class SecurityConfig {
                 // 2) 인증/인가 규칙
                 .authorizeHttpRequests(auth ->
                         auth
-                                // signup/login 은 모두 허용
                                 .requestMatchers("/api/auth/**").permitAll()
-                                // 403 추적을 위한 스프링 기본 error 핸들러
+                                .requestMatchers(HttpMethod.GET, "/api/users/*/posts").permitAll()
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
-                                // 그 외 모든 요청은 인증 필요
+                                .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                                 .anyRequest().authenticated()
                 )
 
