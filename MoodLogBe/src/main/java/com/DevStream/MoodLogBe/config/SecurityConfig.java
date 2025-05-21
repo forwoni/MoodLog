@@ -1,23 +1,24 @@
 package com.DevStream.MoodLogBe.config;
 
 import com.DevStream.MoodLogBe.auth.filter.JwtAuthenticationFilter;
+import com.DevStream.MoodLogBe.auth.repository.UserRepository;
 import com.DevStream.MoodLogBe.auth.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
-
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -38,6 +39,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/auth/**").permitAll()
                                 // 403 추적을 위한 스프링 기본 error 핸들러
                                 .requestMatchers("/error").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                                 // 그 외 모든 요청은 인증 필요
                                 .anyRequest().authenticated()
                 )
@@ -52,6 +54,6 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtUtil);
+        return new JwtAuthenticationFilter(jwtUtil, userRepository);
     }
 }
