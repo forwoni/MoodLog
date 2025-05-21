@@ -9,5 +9,6 @@ public record PostResponseDto(
         Boolean autoSaved,
         String authorName,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        int viewCount
 ) {}

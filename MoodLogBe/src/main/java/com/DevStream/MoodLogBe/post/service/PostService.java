@@ -29,7 +29,8 @@ public class PostService {
                 dto.content(),
                 dto.autoSaved(),
                 null,
-                null
+                null,
+                0
         );
         postRepository.save(post);
     }
@@ -43,7 +44,8 @@ public class PostService {
                         post.getAutoSaved(),
                         post.getAuthor().getUsername(),
                         post.getCreatedAt(),
-                        post.getUpdatedAt()
+                        post.getUpdatedAt(),
+                        post.getViewCount()
                 ))
                 .toList();
     }
@@ -52,6 +54,8 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("게시글 없음"));
 
+        post.increaseViewCount();
+
         return new PostResponseDto(
                 post.getId(),
                 post.getTitle(),
@@ -59,7 +63,8 @@ public class PostService {
                 post.getAutoSaved(),
                 post.getAuthor().getUsername(),
                 post.getCreatedAt(),
-                post.getUpdatedAt()
+                post.getUpdatedAt(),
+                post.getViewCount()
         );
     }
 

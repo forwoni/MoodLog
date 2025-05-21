@@ -34,11 +34,14 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Column(nullable = false)
-    private int viewCount = 0
+    private int viewCount = 0;
 
     public void update(String title, String content, Boolean autoSaved){
         this.title = title;
         this.content = content;
         this.autoSaved = autoSaved;
+    }
+    public void increaseViewCount() {
+        this.viewCount++;
     }
 }
