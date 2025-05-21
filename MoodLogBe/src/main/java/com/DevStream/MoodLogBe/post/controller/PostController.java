@@ -1,6 +1,7 @@
 package com.DevStream.MoodLogBe.post.controller;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
+import com.DevStream.MoodLogBe.config.CustomUserDetails;
 import com.DevStream.MoodLogBe.post.dto.PostRequestDto;
 import com.DevStream.MoodLogBe.post.dto.PostResponseDto;
 import com.DevStream.MoodLogBe.post.service.PostService;
@@ -21,8 +22,8 @@ public class PostController {
 
     @PostMapping
     public ResponseEntity<Void> create(@RequestBody PostRequestDto dto,
-                                       @AuthenticationPrincipal User user) {
-        postService.create(dto, user);
+                                       @AuthenticationPrincipal CustomUserDetails userDetails) {
+        postService.create(dto, userDetails.getUser());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -39,15 +40,15 @@ public class PostController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id,
                                        @RequestBody PostRequestDto dto,
-                                       @AuthenticationPrincipal User user) {
-        postService.update(id, dto, user);
+                                       @AuthenticationPrincipal CustomUserDetails userDetails) {
+        postService.update(id, dto, userDetails.getUser());
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id,
-                                       @AuthenticationPrincipal User user) {
-        postService.delete(id, user);
+                                       @AuthenticationPrincipal CustomUserDetails userDetails) {
+        postService.delete(id, userDetails.getUser());
         return ResponseEntity.noContent().build();
     }
 

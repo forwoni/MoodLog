@@ -19,6 +19,8 @@ public class PostService {
     private final PostRepository postRepository;
 
     public void create(PostRequestDto dto, User user) {
+        if(user == null) throw new IllegalArgumentException("인증된 사용자 없음");
+
         Post post = new Post(
                 null,
                 dto.title(),
