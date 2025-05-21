@@ -23,6 +23,6 @@ public class UserPostController {
     public Page<PostResponseDto> getUserPosts(@PathVariable String username,
                                               @RequestParam(defaultValue = "recent") String sort,
                                               Pageable pageable) {
-        return postService.getUserPosts(username, sort, pageable);
+        return postService.getPostsByUsername(username, sort, pageable);
     }
 }

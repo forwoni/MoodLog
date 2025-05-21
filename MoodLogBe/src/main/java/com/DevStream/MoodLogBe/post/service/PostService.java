@@ -118,33 +118,36 @@ public class PostService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new NoSuchElementException("해당 사용자를 찾을 수 없습니다."));
 
-        // 정렬 기준 설정
-        Pageable sortedPageable = switch (sortBy) {
-            case "likes" ->
-                    PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "likeCount"));
-            case "comments" ->
-                    PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "commentCount"));
-            default ->
-                    PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
+        return switch (sortBy) {
+            case "likes" -> postRepository.findByAuthor(user,
+                            PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "likeCount")))
+                    .map(this::toDto);
+            case "comments" -> postRepository.findPostsByAuthorOrderByCommentCountDesc(username, pageable)
+                    .map(this::toDto);
+            default -> postRepository.findByAuthor(user,
+                            PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt")))
+                    .map(this::toDto);
         };
-
-        return postRepository.findByAuthor(user, sortedPageable)
-                .map(post -> new PostResponseDto(
-                        post.getId(),
-                        post.getTitle(),
-                        post.getContent(),
-                        post.getAutoSaved(),
-                        post.getAuthor().getUsername(),
-                        post.getCreatedAt(),
-                        post.getUpdatedAt(),
-                        post.getViewCount(),
-                        post.getLikeCount(),
-                        post.getComments().stream().map(comment -> new CommentResponseDto(
-                                comment.getId(),
-                                comment.getContent(),
-                                comment.getAuthor().getUsername(),
-                                comment.getCreatedAt()
-                        )).toList()
-                ));
     }
+
+    private PostResponseDto toDto(Post post) {
+        return new PostResponseDto(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getAutoSaved(),
+                post.getAuthor().getUsername(),
+                post.getCreatedAt(),
+                post.getUpdatedAt(),
+                post.getViewCount(),
+                post.getLikeCount(),
+                post.getComments().stream().map(comment -> new CommentResponseDto(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getAuthor().getUsername(),
+                        comment.getCreatedAt()
+                )).toList()
+        );
+    }
+
 }
