@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class follow {
+public class Follow {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
