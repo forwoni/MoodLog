@@ -33,7 +33,9 @@ public class PostService {
                 null,
                 null,
                 0,
-                new ArrayList<>()
+                new ArrayList<>(),
+                new ArrayList<>(),
+                0
         );
         postRepository.save(post);
     }
@@ -49,6 +51,7 @@ public class PostService {
                         post.getCreatedAt(),
                         post.getUpdatedAt(),
                         post.getViewCount(),
+                        post.getLikeCount(),
                         List.of()
                 ))
                 .toList();
@@ -79,6 +82,7 @@ public class PostService {
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
                 post.getViewCount(),
+                post.getLikeCount(),
                 commentDtos
         );
     }
