@@ -9,7 +9,7 @@
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 import { SearchBox } from "../components/searchBox";
-
+import { UserPlayListTitle} from "../components/UserPlayListTitle"
 export default function HistoryPage() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-[102px]">
@@ -23,6 +23,11 @@ export default function HistoryPage() {
       <div className="mt-[23px]">
         <SearchBox />
       </div>
+      <div className="self-start ml-[99px] ">
+        <UserPlayListTitle/>
+      </div>
+        
+
       {/* ...아래에 다른 내용 */}
     </div>
   );
