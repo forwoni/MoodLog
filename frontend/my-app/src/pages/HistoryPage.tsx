@@ -1,6 +1,5 @@
 // import { DivWrapper } from "./DIvWrapper";
 // import { OverlapWrapper } from "./OverlapWrapper";
-// import moodlog_logo_transparent from "./assets/moodlog_logo_transparent.png"
 // import image from image.png;
 // import rectangle from SVGAElement;
 // import vector from SVGAElement;
@@ -9,6 +8,7 @@
 // src/pages/HistoryPage.tsx
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
+import { SearchBox } from "../components/searchBox";
 
 export default function HistoryPage() {
   return (
@@ -20,6 +20,9 @@ export default function HistoryPage() {
         userName="사용자 이름"
         userDescription="사용자에 대한 간단한 설명"
       />
+      <div className="mt-[23px]">
+        <SearchBox />
+      </div>
       {/* ...아래에 다른 내용 */}
     </div>
   );
