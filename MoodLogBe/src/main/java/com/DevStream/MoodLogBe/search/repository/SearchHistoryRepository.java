@@ -13,4 +13,7 @@ public interface SearchHistoryRepository extends JpaRepository<SearchHistory, Lo
 
     // 특정 사용자의 검색 기록을 최근순으로 최대 10개 조회
     List<SearchHistory> findTop10ByUserOrderByUpdatedAtDesc(User user);
+
+    List<SearchHistory> findTop10ByUserOrderByCreatedAtDesc(User user);
+
 }

@@ -2,6 +2,7 @@ package com.DevStream.MoodLogBe.search.service;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.search.domain.SearchHistory;
+import com.DevStream.MoodLogBe.search.dto.SearchHistoryDto;
 import com.DevStream.MoodLogBe.search.repository.SearchHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,5 +34,12 @@ public class SearchHistoryService {
     @Transactional(readOnly = true)
     public List<SearchHistory> getRecentSearches(User user) {
         return searchHistoryRepository.findTop10ByUserOrderByUpdatedAtDesc(user);
+    }
+
+
+    public List<SearchHistoryDto> getRecentHistories(User user) {
+        return searchHistoryRepository.findTop10ByUserOrderByCreatedAtDesc(user).stream()
+                .map(SearchHistoryDto::from)
+                .toList();
     }
 }
