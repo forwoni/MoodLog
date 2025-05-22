@@ -11,6 +11,7 @@ import { UserInfoBox } from "../components/UserInfoBox";
 import { SearchBox } from "../components/searchBox";
 import { UserPlayListTitle} from "../components/UserPlayListTitle"
 import { UserPlayListDescription } from "../components/UserPlayListDescription";
+import { UserPlayListBox } from "../components/UserPlayLIstBox";
 
 export default function HistoryPage() {
   return (
@@ -25,12 +26,16 @@ export default function HistoryPage() {
       <div className="mt-[23px]">
         <SearchBox />
       </div>
-      <div className="self-start ml-[99px] ">
+      <div className="self-start ml-[190px] ">
         <UserPlayListTitle/>
       </div>
-      <div className="self-start ml-[99px] mt-[69]">
+      <div className="self-start ml-[190px] mt-[69px]">
         <UserPlayListDescription/>
       </div>
+      <div className="self-start ml-[190px] mt-[30px]">
+        <UserPlayListBox/>
+      </div>
+        
       {/* ...아래에 다른 내용 */}
     </div>
   );
