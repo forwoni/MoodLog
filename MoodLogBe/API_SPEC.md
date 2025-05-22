@@ -297,3 +297,65 @@ true // 또는 false
   }
 ]
 ```
+## 🔍 검색
+
+### 🔎 키워드 검색
+
+* **URL:** `GET /api/search`
+* **인증 필요:** ❌
+* **Query Parameters:**
+  * `query` : 검색 키워드
+
+* **Response:** `200 OK`
+
+```json
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "string",
+      "content": "string",
+      "autoSaved": false,
+      "authorUsername": "string",
+      "createdAt": "yyyy-MM-ddTHH:mm:ss",
+      "updatedAt": "yyyy-MM-ddTHH:mm:ss",
+      "viewCount": 0,
+      "likeCount": 0,
+      "comments": []
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "username": "string",
+      "email": "string"
+    }
+  ]
+}
+```
+
+* **기능:** 게시글 제목과 사용자 이름 기준 검색. 로그인하지 않아도 사용 가능. 로그인한 경우만 검색 기록 저장됨.
+
+* **예외:**
+  * `400`: query 파라미터 누락
+
+---
+
+### 🕓 검색 히스토리 조회
+
+* **URL:** `GET /api/search/histories`
+* **인증 필요:** ✅
+
+* **Response:** `200 OK`
+
+```json
+[
+  {
+    "keyword": "won",
+    "posts": [...],
+    "users": [...]
+  }
+]
+```
+
+* **기능:** 현재 로그인된 사용자의 최근 검색 기록과 해당 결과를 반환
