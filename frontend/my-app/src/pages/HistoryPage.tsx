@@ -7,19 +7,23 @@
 // src/pages/HistoryPage.tsx
 
 // src/pages/HistoryPage.tsx
-
+import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 
 export default function HistoryPage() {
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-[102px]">
+      {/* 헤더 고정 */}
+      <HeaderBox />
+      {/* 헤더 높이만큼 padding-top 추가! */}
       <UserInfoBox
         userName="사용자 이름"
         userDescription="사용자에 대한 간단한 설명"
       />
-      {/* 아래에 다른 콘텐츠 추가 */}
+      {/* ...아래에 다른 내용 */}
     </div>
   );
 }
+
 
 

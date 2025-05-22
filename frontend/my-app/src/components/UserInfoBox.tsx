@@ -1,35 +1,3 @@
-// export default function UserInfoBox({
-//   userName = "사용자 이름",
-//   userEmail = "honggildong@example.com",
-//   profileImg,
-// }: {
-//   userName?: string;
-//   userEmail?: string;
-//   profileImg?: string;
-// }) {
-//   return (
-//     <div className="w-[1440px] h-[240px] bg-gradient-to-r from-purple-200 to-purple-300 rounded-2xl flex items-center px-16 shadow-md mx-auto mt-8">
-//       {/* 프로필 이미지 */}
-//       <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mr-10 text-gray-400 text-lg font-bold overflow-hidden">
-//         {profileImg ? (
-//           <img
-//             src={profileImg}
-//             alt="프로필"
-//             className="w-full h-full object-cover rounded-full"
-//           />
-//         ) : (
-//           <span>프로필</span>
-//         )}
-//       </div>
-//       {/* 사용자 정보 */}
-//       <div className="flex flex-col justify-center">
-//         <span className="text-white text-3xl font-bold">{userName}</span>
-//         <span className="text-white/90 text-lg mt-2">이메일: {userEmail}</span>
-//       </div>
-//     </div>
-//   );
-// }
-// src/components/UserInfoBox.tsx
 import React from "react";
 interface UserInfoBoxProps {
   userName: string;
