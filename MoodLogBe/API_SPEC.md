@@ -85,6 +85,25 @@
   "refreshToken": "string"
 }
 ```
+---
+
+### 🚪 로그아웃
+
+* **URL:** `POST /api/auth/logout`
+* **인증 필요:** ✅ (Authorization 헤더에 AccessToken 포함)
+
+* **Headers:**
+  * `Authorization: Bearer <accessToken>`
+
+* **Response:** `200 OK`
+
+```json
+{
+  "message": "로그아웃되었습니다."
+}
+```
+
+---
 ### 👤 사용자 정보 조회
 
 * **URL:** `GET /api/users/me`
@@ -99,10 +118,10 @@
   "email": "woni@example.com"
 }
 ```
-
+---
 ### 🛠️ 사용자 정보 수정 (닉네임 및 비밀번호 변경)
 
-* **URL:** `PATCH /api/users/me`
+* **URL:** `PUT /api/users/me`
 * **인증 필요:** ✅
 
 * **Request Body:**
@@ -341,6 +360,8 @@ true // 또는 false
   }
 ]
 ```
+
+---
 ## 📂 Search
 
 ### 🔎 키워드 검색

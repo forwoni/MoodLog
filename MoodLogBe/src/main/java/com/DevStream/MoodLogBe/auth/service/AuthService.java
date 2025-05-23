@@ -98,4 +98,19 @@ public class AuthService {
         return new RefreshResponseDto(newAccess, newRefresh);
 
     }
+
+    @Transactional
+    public void logout(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("유효하지 않은 인증 헤더입니다.");
+        }
+
+        String token = authHeader.substring(7); // "Bearer " 제거
+        if (!jwtUtil.validateToken(token)) {
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+        }
+
+        String username = jwtUtil.getSubject(token);
+        refreshRepo.deleteByUsername(username);
+    }
 }
