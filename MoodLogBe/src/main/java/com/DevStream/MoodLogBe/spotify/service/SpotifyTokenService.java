@@ -1,6 +1,6 @@
-package com.DevStream.MoodLogBe.playlist.service;
+package com.DevStream.MoodLogBe.spotify.service;
 
-import com.DevStream.MoodLogBe.playlist.dto.SpotifyTokenResponse;
+import com.DevStream.MoodLogBe.spotify.dto.SpotifyTokenResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;

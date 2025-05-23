@@ -1,4 +1,4 @@
-package com.DevStream.MoodLogBe.playlist.dto;
+package com.DevStream.MoodLogBe.spotify.dto;
 
 import lombok.Data;
 

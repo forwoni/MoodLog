@@ -1,6 +1,6 @@
-package com.DevStream.MoodLogBe.playlist.controller;
+package com.DevStream.MoodLogBe.spotify.controller;
 
-import com.DevStream.MoodLogBe.playlist.service.SpotifyTokenService;
+import com.DevStream.MoodLogBe.spotify.service.SpotifyTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
