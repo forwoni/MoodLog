@@ -62,9 +62,6 @@ export default function PostPage() {
               제목
             </div>
             <div className="px-6 py-4 text-gray-500">게시글 내용</div>
-            <div className="flex-1 flex items-center justify-center">
-              <span className="text-pink-500 text-2xl">○</span>
-            </div>
           </div>
         </div>
       </div>
