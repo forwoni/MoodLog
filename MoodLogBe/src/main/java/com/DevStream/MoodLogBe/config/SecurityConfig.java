@@ -35,12 +35,13 @@ public class SecurityConfig {
                 // 2) 인증/인가 규칙
                 .authorizeHttpRequests(auth ->
                         auth
-                                .requestMatchers("/api/auth/**").permitAll()
+                                .requestMatchers("/api/auth/**", "/api/spotify/callback").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/users/*/posts").permitAll()
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                                 .requestMatchers("/api/search").permitAll()
+                                .requestMatchers("/api/music/**").permitAll()
                                 .anyRequest().authenticated()
                 )
 
