@@ -35,7 +35,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void markAsRead(Long id, User user) {
+    public void markAsRead(User user, Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("알림을 찾을 수 없습니다."));
         if (!notification.getReceiver().getId().equals(user.getId())) {

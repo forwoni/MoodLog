@@ -5,6 +5,8 @@ import com.DevStream.MoodLogBe.comment.domain.Comment;
 import com.DevStream.MoodLogBe.comment.dto.CommentRequestDto;
 import com.DevStream.MoodLogBe.comment.dto.CommentResponseDto;
 import com.DevStream.MoodLogBe.comment.repository.CommentRepository;
+import com.DevStream.MoodLogBe.notificaiton.domain.NotificationType;
+import com.DevStream.MoodLogBe.notificaiton.service.NotificationService;
 import com.DevStream.MoodLogBe.post.domain.Post;
 import com.DevStream.MoodLogBe.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.NoSuchElementException;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final NotificationService notificationService;
 
     public void create(Long postId, CommentRequestDto dto, User user) {
         Post post = postRepository.findById(postId)
@@ -31,8 +34,15 @@ public class CommentService {
                 .build();
 
         post.getComments().add(comment);
-
         commentRepository.save(comment);
+
+        if (!post.getAuthor().getId().equals(user.getId())) { // 자기 자신에게 알림 방지
+            notificationService.send(
+                    post.getAuthor(),
+                    user.getUsername() + "님이 회원님의 게시글에 댓글을 남겼습니다.",
+                    NotificationType.COMMENT
+            );
+        }
     }
 
     public List<CommentResponseDto> getComments(Long postId) {
