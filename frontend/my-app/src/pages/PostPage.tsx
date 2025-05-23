@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { HeaderBox } from "../layouts/headerBox";
 import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
+import WritePostModal from "../components/writepostmodal";
 
 export default function PostPage() {
   const [font, setFont] = useState("글씨체 1");
@@ -9,6 +10,7 @@ export default function PostPage() {
   const [align, setAlign] = useState("left");
   const [bold, setBold] = useState(false);
   const [italic, setItalic] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white">
@@ -48,7 +50,10 @@ export default function PostPage() {
           >
             I
           </button>
-          <button className="ml-auto px-4 py-2 bg-black text-white rounded">
+          <button
+            className="ml-auto px-4 py-2 bg-black text-white rounded"
+            onClick={() => setModalOpen(true)}
+          >
             게시하기
           </button>
         </div>
@@ -59,12 +64,10 @@ export default function PostPage() {
               제목
             </div>
             <div className="px-6 py-4 text-gray-500">게시글 내용</div>
-            <div className="flex-1 flex items-center justify-center">
-              <span className="text-pink-500 text-2xl">○</span>
-            </div>
           </div>
         </div>
       </div>
+      <WritePostModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   );
 }
