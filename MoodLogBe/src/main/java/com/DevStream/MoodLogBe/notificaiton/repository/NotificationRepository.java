@@ -1,4 +1,4 @@
-package com.DevStream.MoodLogBe.notificaiton.domain.repository;
+package com.DevStream.MoodLogBe.notificaiton.repository;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.notificaiton.domain.Notification;
