@@ -2,6 +2,8 @@ package com.DevStream.MoodLogBe.social.service;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.auth.repository.UserRepository;
+import com.DevStream.MoodLogBe.notificaiton.domain.NotificationType;
+import com.DevStream.MoodLogBe.notificaiton.service.NotificationService;
 import com.DevStream.MoodLogBe.social.domain.Follow;
 import com.DevStream.MoodLogBe.social.dto.FollowRequestDto;
 import com.DevStream.MoodLogBe.social.dto.FollowResponseDto;
@@ -21,6 +23,7 @@ public class FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final FollowMapper followMapper;
+    private final NotificationService notificationService;
 
     @Transactional
     public void follow(User follower, FollowRequestDto dto) {
@@ -38,6 +41,13 @@ public class FollowService {
 
         Follow follow = new Follow(null, follower, following, null);
         followRepository.save(follow);
+
+        // ✨ 알림 전송
+        notificationService.send(
+                following,
+                follower.getUsername() + "님이 회원님을 팔로우했습니다.",
+                NotificationType.FOLLOW
+        );
     }
 
     @Transactional

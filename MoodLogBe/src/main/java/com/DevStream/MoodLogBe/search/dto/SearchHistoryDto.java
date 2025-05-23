@@ -11,7 +11,7 @@ public record SearchHistoryDto(
     public static SearchHistoryDto from(SearchHistory history) {
         return new SearchHistoryDto(
                 history.getKeyword(),
-                history.getCreatedAt()
+                history.getSearchedAt()
         );
     }
 }
