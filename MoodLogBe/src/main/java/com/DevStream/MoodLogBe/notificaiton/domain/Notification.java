@@ -31,8 +31,16 @@ public class Notification {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private NotificationType type;
+
     public void markAsRead() {
         this.isRead = true;
+    }
+
+    public boolean isRead() {
+        return isRead;
     }
 
 }

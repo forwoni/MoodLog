@@ -2,10 +2,14 @@ package com.DevStream.MoodLogBe.notificaiton.service;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.notificaiton.domain.Notification;
+import com.DevStream.MoodLogBe.notificaiton.domain.NotificationType;
+import com.DevStream.MoodLogBe.notificaiton.dto.NotificationResponseDto;
 import com.DevStream.MoodLogBe.notificaiton.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor

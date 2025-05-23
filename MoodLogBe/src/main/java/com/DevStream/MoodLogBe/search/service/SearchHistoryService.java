@@ -38,7 +38,7 @@ public class SearchHistoryService {
 
 
     public List<SearchHistoryDto> getRecentHistories(User user) {
-        return searchHistoryRepository.findTop10ByUserOrderByCreatedAtDesc(user).stream()
+        return searchHistoryRepository.findTop10ByUserOrderBySearchedAtDesc(user).stream()
                 .map(SearchHistoryDto::from)
                 .toList();
     }

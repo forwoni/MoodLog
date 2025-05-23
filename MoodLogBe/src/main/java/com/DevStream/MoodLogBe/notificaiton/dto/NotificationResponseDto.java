@@ -1,6 +1,7 @@
 package com.DevStream.MoodLogBe.notificaiton.dto;
 
 import com.DevStream.MoodLogBe.notificaiton.domain.Notification;
+import com.DevStream.MoodLogBe.notificaiton.domain.NotificationType;
 
 import java.time.LocalDateTime;
 
