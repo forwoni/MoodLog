@@ -1,7 +1,10 @@
 import React from "react";
 import pencil_icon from "../assets/pencil_icon.svg";
+import { useNavigate } from "react-router-dom";
 
 export const UserPlayListBox = (): React.JSX.Element => {
+  const navigate = useNavigate();
+
   return (
     <div className="w-60 h-[348px] mt-[30px]">
       <div className="flex w-60 items-start gap-10 relative">
@@ -9,13 +12,15 @@ export const UserPlayListBox = (): React.JSX.Element => {
           {/* 이미지 영역 */}
           <div className="flex h-60 items-start relative self-stretch w-full">
             <div className="relative flex-1 self-stretch grow bg-[#d8d8d880]">
-              <div className="absolute w-[209px] h-4 top-[111px] left-4 font-normal text-black text-center tracking-[0] leading-4 whitespace-nowrap">
+              <div className="absolute w-[209px] h-4 top-[111px] left-4 font-normal text-black text-center tracking-[0] leading-4 whitespace-nowrap flex items-center justify-center">
                 노래 이미지
               </div>
+              {/* 연필 아이콘 클릭 시 PlayListEditor로 이동 */}
               <img
                 className="absolute left-[216px] top-[9px] w-6 h-6 cursor-pointer"
                 src={pencil_icon}
-                alt="내용 수정"
+                alt="이미지 수정"
+                onClick={() => navigate("/playlisteditor")}
               />
             </div>
           </div>

@@ -45,33 +45,3 @@ export const HistoryBox = (): React.JSX.Element => {
     </div>
   );
 };
-
-// import React from "react";
-// import BotAngleBracket from "../assets/BotAngleBracket.svg"
-
-// export const HistoryBox = (): React.JSX.Element => {
-//   return (
-//     <div className="flex flex-col w-[574px] h-[1539px] items-center pt-[19px] pb-[5px] px-0 gap-5 relative bg-white rounded-lg shadow">
-//       {/* 정렬 기준 */}
-//       <div className="w-[332px] h-[21px] mt-[-1px] whitespace-nowrap relative font-normal text-black text-[21px] text-right tracking-[0] leading-7">
-//         정렬 기준
-//       </div>
-
-
-      
-//       {/* 게시물 없음 */}
-//       <div className="w-[100px] relative font-normal text-black text-lg text-right tracking-[0] leading-7">
-//         게시물 없음
-//       </div>
-//       {/* 페이지네이션 */}
-//       <div className="h-7 items-end justify-end self-stretch w-full flex gap-5 relative">
-//         <div className="relative w-fit mt-[-1px] font-normal text-black text-lg text-right tracking-[0] leading-7 whitespace-nowrap">
-//           1
-//         </div>
-//         <div className="relative w-fit mt-[-1px] font-normal text-black text-lg text-right tracking-[0] leading-7 whitespace-nowrap cursor-pointer hover:underline">
-//           다음 &gt;
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
