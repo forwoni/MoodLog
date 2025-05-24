@@ -15,3 +15,6 @@ jwt:
   secret: aVeryLongRandomSecretKeyThatIsAtLeast32Chars!!   # HS256 서명 키 (외부에서 관리)
   access-token-expiry: 900000                           # Access Token 만료시간 (밀리초) = 15분
   refresh-token-expiry: 604800000                       # Refresh Token 만료시간 (밀리초) = 7일
+
+server:
+  port: 8081
