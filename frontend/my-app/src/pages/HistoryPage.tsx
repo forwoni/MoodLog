@@ -14,7 +14,7 @@ export default function HistoryPage(){
             <div className="w-[1440px] mx-auto mt-[102px]"> 
                 <UserInfoBox
                 userName="사용자 이름"
-                userDescription="사용자에 대한 간단한 설명명"
+                userDescription="사용자에 대한 간단한 설명"
                 />
             </div>
             <div className="mt-[23px] flex justify-center">
