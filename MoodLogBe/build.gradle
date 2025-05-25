@@ -36,6 +36,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'org.apache.commons:commons-csv:1.10.0'
 	implementation 'com.auth0:java-jwt:4.4.0'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
