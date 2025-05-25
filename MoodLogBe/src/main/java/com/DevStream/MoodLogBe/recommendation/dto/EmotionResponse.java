@@ -1,4 +1,4 @@
-package com.DevStream.MoodLogBe.analysis.dto;
+package com.DevStream.MoodLogBe.recommendation.dto;
 
 import lombok.Data;
 

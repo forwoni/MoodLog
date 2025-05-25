@@ -1,6 +1,6 @@
-package com.DevStream.MoodLogBe.analysis.service;
+package com.DevStream.MoodLogBe.recommendation.service;
 
-import com.DevStream.MoodLogBe.analysis.dto.EmotionResponse;
+import com.DevStream.MoodLogBe.recommendation.dto.EmotionResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
