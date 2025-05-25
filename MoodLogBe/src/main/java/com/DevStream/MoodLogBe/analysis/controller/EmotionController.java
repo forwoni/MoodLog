@@ -17,7 +17,7 @@ public class EmotionController {
 
     private final EmotionAnalysisService emotionAnalysisService;
 
-    @PostMapping("/analyze")
+    @PostMapping("/recommend")
     public EmotionResponse analyzeEmotion(@RequestBody Map<String, String> request) {
         String text = request.get("text");
         return emotionAnalysisService.analyzeEmotion(text);

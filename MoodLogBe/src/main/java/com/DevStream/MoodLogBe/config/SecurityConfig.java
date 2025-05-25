@@ -41,7 +41,7 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                                 .requestMatchers("/api/search").permitAll()
-                                .requestMatchers("/api/emotion/analyze").permitAll()
+                                .requestMatchers("/api/emotion/**").permitAll()
                                 .requestMatchers("/api/spotify/**").permitAll()
                                 .anyRequest().authenticated()
                 )
