@@ -215,7 +215,14 @@
 
 * **URL:** `PUT /api/posts/{id}`
 * **인증 필요:** ✅
-* **Request Body:** PostRequestDto
+* **Request Body:**
+```json
+{
+  "title": "string",
+  "content": "string",
+  "autoSaved": true
+}
+```
 * **Response:** `200 OK`
 * **예외:**
 
@@ -492,4 +499,46 @@ true // 또는 false
 
 * **예외:**
   * `500`: Spotify 인증 실패(토큰 발급 실패 시)
+
+## 📂 Emotion
+
+### 🎭감정 분석 및 음악 추천
+
+* **URL:** `POST /api/emotion/recommend`
+* **인증 필요:**  ✅ (JWT 토큰 필요, Authorization: Bearer <accessToken>)
+* **Request Body:**
+
+```json
+{
+  "text": "오늘 기분이 우울하고 외로워"
+}
+```
+
+* **Response:** `200 OK`
+
+```json
+{
+  "emotion": "우울(부정)",
+  "tracks": [
+    {
+      "track_name": "Sad Songs (with Said The Sky & Annika Wells)",
+      "artist": "ILLENIUM",
+      "preview_url": null,
+      "spotify_url": "https://open.spotify.com/track/4pioeMeJngq8T3QAEqwVA3"
+    },
+    {
+      "track_name": "Endless",
+      "artist": "곽진언",
+      "preview_url": null,
+      "spotify_url": "https://open.spotify.com/track/29IGd0qsLN56BEaUzh7YOS"
+    }
+  ]
+}
+
+```
+* **예외:**
+  * `400`: text 필드 누락 또는 비어있음
+  * `401`: 인증실패(토큰 없음 또는 만료)
+  * `422`: 요청 형식 오류 (Spring 유효성 검사 실패 등)
+  * `500`: AI 서버 또는 Spotify API 호출 실패
 
