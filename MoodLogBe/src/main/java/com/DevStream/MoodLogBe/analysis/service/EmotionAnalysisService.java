@@ -20,7 +20,7 @@ public class EmotionAnalysisService {
      */
     public EmotionResponse analyzeEmotion(String text) {
         return webClient.post()
-                .uri("/api/emotion/analyze")
+                .uri("/recommend")
                 .bodyValue(Map.of("text", text))
                 .retrieve()
                 .bodyToMono(EmotionResponse.class)
