@@ -4,6 +4,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HistoryPage from './pages/HistoryPage';
 import PlayListEditor from "./pages/PlayListEditor";
+import MainPage from './pages/MainPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/playlistEditor" element={<PlayListEditor />} />
+        <Route path='/main' element={<MainPage/>}/>
       </Routes>
     </BrowserRouter>
   );
