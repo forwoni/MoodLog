@@ -1,8 +1,8 @@
-package com.DevStream.MoodLogBe.notificaiton.controller;
+package com.DevStream.MoodLogBe.notification.controller;
 
 import com.DevStream.MoodLogBe.config.CustomUserDetails;
-import com.DevStream.MoodLogBe.notificaiton.dto.NotificationResponseDto;
-import com.DevStream.MoodLogBe.notificaiton.service.NotificationService;
+import com.DevStream.MoodLogBe.notification.dto.NotificationResponseDto;
+import com.DevStream.MoodLogBe.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

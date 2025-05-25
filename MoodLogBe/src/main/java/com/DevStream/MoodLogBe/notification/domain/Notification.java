@@ -1,4 +1,4 @@
-package com.DevStream.MoodLogBe.notificaiton.domain;
+package com.DevStream.MoodLogBe.notification.domain;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
 import jakarta.persistence.*;
