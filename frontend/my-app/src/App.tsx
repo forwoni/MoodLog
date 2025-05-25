@@ -7,7 +7,7 @@ import PlayListEditor from "./pages/PlayListEditor";
 import PostPage from "./pages/PostPage";
 import MainPage from './pages/MainPage';
 import OtherUserHistoryPage from './pages/OtherUserHistroyPage';
-
+import UserPostDetailPage from './pages/UserPostDetailPage'
 function App() {
   return (
     <BrowserRouter>
@@ -20,6 +20,7 @@ function App() {
         <Route path="/post" element={<PostPage />} />
         <Route path='/main' element={<MainPage/>}/>
         <Route path='/otheruserhistory' element={<OtherUserHistoryPage />} />
+        <Route path='/userpostdetail' element={<UserPostDetailPage />} />
       </Routes>
     </BrowserRouter>
   );
