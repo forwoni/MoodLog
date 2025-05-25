@@ -1,7 +1,7 @@
-package com.DevStream.MoodLogBe.notificaiton.repository;
+package com.DevStream.MoodLogBe.notification.repository;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
-import com.DevStream.MoodLogBe.notificaiton.domain.Notification;
+import com.DevStream.MoodLogBe.notification.domain.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
