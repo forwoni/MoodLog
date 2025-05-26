@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -7,6 +8,7 @@ function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   // 아이디 저장 기능: 컴포넌트 마운트 시 email 자동 입력
   useEffect(() => {
@@ -41,7 +43,8 @@ function LoginPage() {
           localStorage.removeItem('savedEmail');
         }
 
-        // TODO: 로그인 후 페이지 이동 등 추가
+        // 로그인 성공 시 메인페이지로 이동 (예: '/')
+        navigate('/main');
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response && err.response.status === 401) {
