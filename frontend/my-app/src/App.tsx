@@ -28,7 +28,7 @@ function App() {
         <Route path="/popular" element={<PopularPostsPage />} />
         <Route path="/post/:id" element={<PostDetail />} />
         <Route path="/otheruserhistory" element={<OtherUserHistoryPage />} />
-        <Route path="/userpostdetail" element={<UserPostDetailPage />} />
+        <Route path="/userpostdetail/:id" element={<UserPostDetailPage />} />
         <Route path="/followmanagement" element={<FollowManagementPage />} />
       </Routes>
     </BrowserRouter>
