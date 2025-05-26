@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { HeaderBox } from "../layouts/headerBox";
+import logo from "../assets/moodlog_logo_transparent.png";
 import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
 
@@ -17,7 +17,6 @@ export default function PostPage() {
 
   const navigate = useNavigate();
 
-  // 선택 영역 저장/복원
   const saveSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -34,7 +33,6 @@ export default function PostPage() {
     }
   };
 
-  // 명령 실행 함수
   const handleCommand = (command: string, value?: string) => {
     saveSelection();
     document.execCommand(command, false, value);
@@ -79,16 +77,23 @@ export default function PostPage() {
     (!body || body === "<br>") &&
     (!editorRef.current || editorRef.current.innerText.trim() === "");
 
-  // 게시하기 버튼 클릭 시 history 페이지로 이동
   const handleSubmit = () => {
-    // 실제로는 여기서 서버로 데이터 전송 등 처리 가능
     navigate("/history");
   };
 
   return (
     <div className="min-h-screen bg-white">
-      <HeaderBox />
-      <div className="max-w-[1200px] mx-auto pt-[102px]">
+      {/* ✅ 왼쪽 정렬된 로고 */}
+      <div className="w-full bg-white py-4 px-10 shadow-md flex justify-start items-center">
+        <img
+          src={logo}
+          alt="MoodLog"
+          className="h-24 cursor-pointer"
+          onClick={() => navigate("/main")}
+        />
+      </div>
+
+      <div className="max-w-[1200px] mx-auto pt-6">
         {/* 툴바 */}
         <div className="flex items-center border-b border-gray-200 py-2 px-2 bg-white">
           <FontDropdown value={font} onChange={handleFontChange} />
