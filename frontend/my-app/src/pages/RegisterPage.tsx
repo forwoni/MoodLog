@@ -1,20 +1,52 @@
 import { useState } from 'react';
+import axios from 'axios';
 
 function RegisterPage() {
-  const [id, setId] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
   const [pwCheck, setPwCheck] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const handleRegister = (e: React.FormEvent) => {
+  // 회원가입
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
 
+    if (!username || !email || !pw || !pwCheck) {
+      setError('모든 항목을 입력해 주세요.');
+      return;
+    }
     if (pw !== pwCheck) {
-      alert('비밀번호가 일치하지 않습니다.');
+      setError('비밀번호가 일치하지 않습니다.');
       return;
     }
 
-    console.log({ id, pw });
-    alert('회원가입 완료!');
+    try {
+      const res = await axios.post('http://localhost:8081/api/auth/signup', {
+        username,
+        email,
+        password: pw,
+      });
+      if (res.status === 201) {
+        setSuccess('회원가입이 완료되었습니다! 로그인 페이지로 이동해 주세요.');
+        setUsername('');
+        setEmail('');
+        setPw('');
+        setPwCheck('');
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response && err.response.status === 400) {
+        setError(
+          (err.response.data as string) ||
+            '유효성 검사 실패: 이메일/아이디 중복 또는 형식 오류'
+        );
+      } else {
+        setError('회원가입 중 오류가 발생했습니다.');
+      }
+    }
   };
 
   return (
@@ -27,15 +59,32 @@ function RegisterPage() {
           {/* 제목 */}
           <h2 className="text-2xl font-extrabold text-black mb-8">회원가입</h2>
 
+          {/* 에러/성공 메시지 */}
+          {error && <div className="mb-4 text-red-500 text-center">{error}</div>}
+          {success && <div className="mb-4 text-green-600 text-center">{success}</div>}
+
           {/* 아이디 */}
           <div className="mb-4">
             <label className="block mb-1 text-sm font-medium text-gray-700">아이디</label>
             <input
               type="text"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded placeholder-gray-400 outline-none"
               placeholder="아이디"
+              required
+            />
+          </div>
+
+          {/* 이메일 */}
+          <div className="mb-4">
+            <label className="block mb-1 text-sm font-medium text-gray-700">이메일</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded placeholder-gray-400 outline-none"
+              placeholder="이메일"
               required
             />
           </div>
