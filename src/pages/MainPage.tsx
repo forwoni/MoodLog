@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/moodlog_logo_transparent.png';
 import { Bell, User, X, Pencil, Heart, Folder, LogOut, FileText, Settings } from 'lucide-react';
-// import OptimizedSpotifyChart from '../components/PopularChart'; // 필요 시 사용 가능
 
 function MainPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -75,9 +74,6 @@ function MainPage() {
                 </div>
               </div>
             ))}
-            {/* 또는 아래 컴포넌트로 대체 가능
-            <OptimizedSpotifyChart />
-            */}
           </div>
         </section>
 
@@ -85,10 +81,7 @@ function MainPage() {
           <div className="w-[1px] bg-gray-400 mx-28 self-stretch" />
 
           <section className="flex flex-col justify-center items-end gap-12">
-            <button
-              onClick={() => navigate('/post')}
-              className="flex items-center gap-4 px-8 py-6 bg-white rounded-lg shadow border hover:bg-gray-100 text-2xl font-semibold w-80"
-            >
+            <button className="flex items-center gap-4 px-8 py-6 bg-white rounded-lg shadow border hover:bg-gray-100 text-2xl font-semibold w-80">
               <Pencil className="w-8 h-8 text-black" /> 글쓰기
             </button>
             <button
@@ -133,10 +126,7 @@ function MainPage() {
             <p className="font-bold text-base">닉네임</p>
           </div>
           <ul className="space-y-3 mt-4">
-            <li
-              className="flex items-center gap-2 hover:underline cursor-pointer"
-              onClick={() => navigate('/history')}
-            >
+            <li className="flex items-center gap-2 hover:underline cursor-pointer">
               <FileText className="w-5 h-5 text-gray-700" /> 내 글 목록
             </li>
             <li
