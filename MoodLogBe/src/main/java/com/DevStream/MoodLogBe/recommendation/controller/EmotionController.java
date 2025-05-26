@@ -1,7 +1,7 @@
-package com.DevStream.MoodLogBe.analysis.controller;
+package com.DevStream.MoodLogBe.recommendation.controller;
 
-import com.DevStream.MoodLogBe.analysis.dto.EmotionResponse;
-import com.DevStream.MoodLogBe.analysis.service.EmotionAnalysisService;
+import com.DevStream.MoodLogBe.recommendation.dto.EmotionResponse;
+import com.DevStream.MoodLogBe.recommendation.service.EmotionAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

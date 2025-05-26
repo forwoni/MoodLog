@@ -8,9 +8,10 @@ import PostPage from './pages/PostPage';
 import MainPage from './pages/MainPage';
 import MyPage from './pages/MyPage';
 import PopularPostsPage from './pages/PopularPostsPage';
-
-// ✅ 새로 추가
 import PostDetail from './pages/PostDetail';
+import OtherUserHistoryPage from './pages/OtherUserHistroyPage';
+import UserPostDetailPage from './pages/UserPostDetailPage';
+import FollowManagementPage from './pages/FollowManagementPage';
 
 function App() {
   return (
@@ -25,9 +26,10 @@ function App() {
         <Route path="/main" element={<MainPage />} />
         <Route path="/mypage" element={<MyPage />} />
         <Route path="/popular" element={<PopularPostsPage />} />
-
-        {/* ✅ 게시글 열람 페이지 라우트 추가 */}
         <Route path="/post/:id" element={<PostDetail />} />
+        <Route path="/otheruserhistory" element={<OtherUserHistoryPage />} />
+        <Route path="/userpostdetail" element={<UserPostDetailPage />} />
+        <Route path="/followmanagement" element={<FollowManagementPage />} />
       </Routes>
     </BrowserRouter>
   );

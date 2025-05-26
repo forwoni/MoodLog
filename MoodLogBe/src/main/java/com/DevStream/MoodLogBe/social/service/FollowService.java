@@ -2,8 +2,8 @@ package com.DevStream.MoodLogBe.social.service;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.auth.repository.UserRepository;
-import com.DevStream.MoodLogBe.notificaiton.domain.NotificationType;
-import com.DevStream.MoodLogBe.notificaiton.service.NotificationService;
+import com.DevStream.MoodLogBe.notification.domain.NotificationType;
+import com.DevStream.MoodLogBe.notification.service.NotificationService;
 import com.DevStream.MoodLogBe.social.domain.Follow;
 import com.DevStream.MoodLogBe.social.dto.FollowRequestDto;
 import com.DevStream.MoodLogBe.social.dto.FollowResponseDto;

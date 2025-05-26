@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/moodlog_logo_transparent.png';
 import { Bell, User, X, Pencil, Heart, Folder, LogOut, FileText, Settings } from 'lucide-react';
+// import OptimizedSpotifyChart from '../components/PopularChart'; // 필요 시 사용 가능
 
 function MainPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,6 +75,9 @@ function MainPage() {
                 </div>
               </div>
             ))}
+            {/* 또는 아래 컴포넌트로 대체 가능
+            <OptimizedSpotifyChart />
+            */}
           </div>
         </section>
 

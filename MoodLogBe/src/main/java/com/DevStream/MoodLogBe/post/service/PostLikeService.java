@@ -1,8 +1,8 @@
 package com.DevStream.MoodLogBe.post.service;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
-import com.DevStream.MoodLogBe.notificaiton.domain.NotificationType;
-import com.DevStream.MoodLogBe.notificaiton.service.NotificationService;
+import com.DevStream.MoodLogBe.notification.domain.NotificationType;
+import com.DevStream.MoodLogBe.notification.service.NotificationService;
 import com.DevStream.MoodLogBe.post.domain.Post;
 import com.DevStream.MoodLogBe.post.domain.PostLike;
 import com.DevStream.MoodLogBe.post.repository.PostLikeRepository;

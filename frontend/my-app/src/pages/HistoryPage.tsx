@@ -25,7 +25,7 @@ export default function HistoryPage(){
                 <div>
                     <UserPlayListTitle />
                     <UserPlayListDescription />
-                    <UserPlayListBox />
+                    <UserPlayListBox showEditButton={true} />
                 </div>
             {/* 오른쪽: 게시글(HistoryBox) */}
                 <div className="ml-[70px] flex-1">
