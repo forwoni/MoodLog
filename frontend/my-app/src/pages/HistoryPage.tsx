@@ -6,7 +6,7 @@ import { SearchBox } from "../components/searchBox";
 import { UserPlayListTitle } from "../components/UserPlayListTitle";
 import { UserPlayListDescription } from "../components/UserPlayListDescription";
 import { UserPlayListBox } from "../components/UserPlayLIstBox";
-import { HistoryBox } from "../components/HistoryBox"; // ✅ named import로 수정
+// import { HistoryBox } from "../components/HistoryBox"; // ✅ named import로 수정
 
 interface Post {
   id: number;
