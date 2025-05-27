@@ -1,78 +1,102 @@
-// import { useEffect, useState } from "react";
-// import { useParams } from "react-router-dom";
-// import axios from "axios";
-// import { HeaderBox } from "../layouts/headerBox";
-// import { UserInfoBox } from "../components/UserInfoBox";
-// import { UserPlayListTitle } from "../components/UserPlayListTitle";
-// import { UserPlayListDescription } from "../components/UserPlayListDescription";
-// import { UserPlayListBox } from "../components/UserPlayLIstBox";
-// // import { HistoryBox } from "../components/HistoryBox";
 
-// interface Post {
-//   id: number;
-//   title: string;
-//   content: string;
-//   date: string;
-// }
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import api from "../services/axiosInstance";
+import { HeaderBox } from "../layouts/headerBox";
+import OtherUserInfoBox from "../components/OtherUserInfoBox";
+import OtherUserHistoryBox from "../components/OtherUserHistoryBox";
+import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
+interface PlaylistTrack {
+  trackName: string;
+  artist: string;
+  spotifyUrl: string;
+}
+interface Playlist {
+  id: number;
+  name: string;
+  description: string;
+  tracks: PlaylistTrack[];
+}
+interface Comment {
+  id: number;
+  content: string;
+  authorUsername: string;
+  createdAt: string;
+}
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
+  likeCount: number;
+  comments: Comment[];
+  playlist?: Playlist;
+}
+interface Page<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+}
 
-// interface UserInfo {
-//   username: string;
-//   email: string;
-// }
 
-// export default function OtherUserHistoryPage() {
-//   const { username } = useParams();
-//   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-//   const [posts, setPosts] = useState<Post[]>([]);
+export default function OtherUserHistoryPage() {
+  const { username } = useParams<{ username: string }>();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<"recent" | "likes" | "comments">("recent");
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-//   useEffect(() => {
-//     if (!username) return;
+  useEffect(() => {
+    if (!username) return;
+    const fetchPosts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await api.get<Page<Post>>(
+          `/users/${username}/posts`,
+          { params: { sort, page, size: 6 } }
+        );
+        setPosts(res.data.content);
+        setTotalPages(res.data.totalPages || 1);
+      } catch (err) {
+        setError("게시글을 불러오는 중 오류가 발생했습니다.");
+        setPosts([]);
+        setTotalPages(1);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPosts();
+  }, [username, sort, page]);
 
-//     const fetchUserData = async () => {
-//       try {
-//         // 게시글 불러오기
-//         const postRes = await axios.get(`/api/users/${username}/posts`);
-//         const converted = postRes.data.content.map((p: any) => ({
-//           id: p.id,
-//           title: p.title,
-//           content: p.content,
-//           date: p.createdAt.split("T")[0],
-//         }));
-//         setPosts(converted);
-
-//         // 유저 정보는 게시글에 포함된 authorName이나 API가 추가되면 분리 가능
-//         setUserInfo({
-//           username,
-//           email: "email 정보 없음",
-//         });
-//       } catch (err) {
-//         console.error("상대방 데이터 조회 실패:", err);
-//       }
-//     };
-
-//     fetchUserData();
-//   }, [username]);
-
-//   return (
-//     <div className="w-[1440px] mx-auto flex flex-col items-center">
-//       <HeaderBox />
-//       <div className="w-[1440px] mx-auto mt-[102px]">
-//         <UserInfoBox
-//           userName={userInfo?.username || "상대방 사용자"}
-//           userDescription="상대방의 게시글과 플레이리스트"
-//         />
-//       </div>
-//       <div className="flex flex-row mt-[40px]">
-//         <div>
-//           <UserPlayListTitle initialTitle="상대방의 플레이리스트" />
-//           <UserPlayListDescription initialDescription="상대방의 플레이리스트 설명" />
-//           <UserPlayListBox showEditButton={false} username={username} />
-//         </div>
-//         <div className="ml-[70px] flex-1">
-//           <HistoryBox posts={posts} showEditButton={false} showDeleteButton={false} />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
+  return (
+    <div className="w-[1440px] mx-auto flex flex-col items-center">
+      <HeaderBox />
+      <div className="w-[1440px] mx-auto mt-[102px]">
+        <OtherUserInfoBox authorName={username || ""} />
+      </div>
+      <div className="flex flex-row mt-[40px]">
+        <div>
+          <OtherUserPlayListBox username={username || ""} />
+        </div>
+        <div className="ml-[100px] flex-1">
+          <OtherUserHistoryBox
+            posts={posts}
+            loading={loading}
+            error={error}
+            sort={sort}
+            setSort={setSort}
+            page={page}
+            setPage={setPage}
+            totalPages={totalPages}
+          />
+        </div>
+      </div>
+    </div>
+ );
+}
