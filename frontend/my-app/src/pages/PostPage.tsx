@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/axiosInstance";
 import logo from "../assets/moodlog_logo_transparent.png";
@@ -31,6 +31,15 @@ function isErrorResponse(data: unknown): data is ErrorResponse {
   );
 }
 
+// 임시글/게시글 타입
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  autoSaved: boolean;
+  authorUsername: string;
+}
+
 export default function PostPage() {
   const [font, setFont] = useState("Arial");
   const [fontSize, setFontSize] = useState(16);
@@ -39,10 +48,74 @@ export default function PostPage() {
   const [italic, setItalic] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
   const navigate = useNavigate();
+
+  // 1. 최신 임시글 불러오기 및 이전 임시글 삭제
+  useEffect(() => {
+    const loadMyLatestDraft = async () => {
+      try {
+        const { data } = await api.get<Post[]>("/posts");
+        const myDrafts = data
+          .filter(post => post.autoSaved)
+          .sort((a, b) => b.id - a.id);
+
+        if (myDrafts.length > 0) {
+          const latestDraft = myDrafts[0];
+          setTitle(latestDraft.title);
+          setContent(latestDraft.content);
+          if (editorRef.current) {
+            editorRef.current.innerHTML = latestDraft.content;
+          }
+          setCurrentDraftId(latestDraft.id);
+
+          // 이전 임시글 삭제
+          await Promise.all(
+            myDrafts.slice(1).map(draft =>
+              api.delete(`/posts/${draft.id}`)
+            )
+          );
+        }
+      } catch (error) {
+        console.error("임시 저장글 불러오기 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMyLatestDraft();
+  }, []);
+
+  // 2. 자동 저장 (5초마다)
+  useEffect(() => {
+    const autoSave = async () => {
+      if (!title && !content) return;
+
+      try {
+        const payload = {
+          title: title || "임시 저장 제목",
+          content: content || " ",
+          autoSaved: true
+        };
+
+        if (currentDraftId) {
+          await api.put(`/posts/${currentDraftId}`, payload);
+        } else {
+          const response = await api.post("/posts", payload);
+          setCurrentDraftId(response.data.id);
+        }
+      } catch (error) {
+        console.error("자동 저장 실패:", error);
+      }
+    };
+
+    const interval = setInterval(autoSave, 5000);
+    return () => clearInterval(interval);
+  }, [title, content, currentDraftId]);
 
   // 에디터 selection 저장/복원
   const saveSelection = () => {
@@ -104,7 +177,7 @@ export default function PostPage() {
     setContent(editorRef.current?.innerHTML || "");
   };
 
-  // 게시물 최종 제출
+  // 3. 게시물 최종 제출 (임시글이면 autoSaved: false로 전환)
   const handlePublish = async () => {
     try {
       if (!title.trim()) {
@@ -112,12 +185,19 @@ export default function PostPage() {
         return;
       }
 
-      // 임시 저장 없이 무조건 새 글 생성(POST)
-      await api.post("/posts", {
-        title,
-        content,
-        autoSaved: false
-      });
+      if (currentDraftId) {
+        await api.put(`/posts/${currentDraftId}`, {
+          title,
+          content,
+          autoSaved: false
+        });
+      } else {
+        await api.post("/posts", {
+          title,
+          content,
+          autoSaved: false
+        });
+      }
 
       navigate("/history");
     } catch (error: unknown) {
@@ -142,6 +222,10 @@ export default function PostPage() {
   const showPlaceholder =
     (!content || content === "<br>") &&
     (!editorRef.current || editorRef.current.innerText.trim() === "");
+
+  if (isLoading) {
+    return <div className="text-center py-8">불러오는 중...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white">
