@@ -15,6 +15,11 @@ import java.util.List;
 public class SearchHistoryService {
     private final SearchHistoryRepository searchHistoryRepository;
 
+    /**
+     * 사용자의 검색 기록을 기록
+     * - 같은 키워드가 이미 있으면 updatedAt만 갱신
+     * - 없으면 새로 저장
+     */
     @Transactional
     public void recordSearch(User user, String keyword) {
         searchHistoryRepository.findByUserAndKeyword(user, keyword)
@@ -32,12 +37,18 @@ public class SearchHistoryService {
                 });
     }
 
+    /**
+     * 최근 검색 기록(엔티티)을 조회
+     * - 최신순 최대 10개 반환
+     */
     @Transactional(readOnly = true)
     public List<SearchHistory> getRecentSearches(User user) {
         return searchHistoryRepository.findTop10ByUserOrderByUpdatedAtDesc(user);
     }
 
-
+    /**
+     * 최근 검색 기록을 DTO로 변환하여 반환
+     */
     public List<SearchHistoryDto> getRecentHistories(User user) {
         return searchHistoryRepository.findTop10ByUserOrderBySearchedAtDesc(user).stream()
                 .map(SearchHistoryDto::from)
