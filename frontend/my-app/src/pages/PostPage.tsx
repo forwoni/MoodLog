@@ -1,12 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../services/axiosInstance"; // axios 인스턴스 import
 import logo from "../assets/moodlog_logo_transparent.png";
 import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
-
-// 사용자 정보는 실제로는 context 등에서 받아오는 것이 안전합니다.
-const getCurrentUsername = () => localStorage.getItem("username") || "";
 
 interface Post {
   id: number;
@@ -22,7 +19,6 @@ export default function PostPage() {
   const [align, setAlign] = useState("left");
   const [bold, setBold] = useState(false);
   const [italic, setItalic] = useState(false);
-
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
@@ -32,19 +28,13 @@ export default function PostPage() {
   const savedSelection = useRef<Range | null>(null);
   const navigate = useNavigate();
 
-  // 1. 최신 임시글(내가 작성한 것만) 불러오기 및 이전 임시글 삭제
+  // 최신 임시글 불러오기 및 이전 임시글 삭제
   useEffect(() => {
     const loadMyLatestDraft = async () => {
       try {
-        const username = getCurrentUsername();
-        // 내 글만 조회 (정렬: 최신순, 임시글만)
-        const { data } = await axios.get<Post[]>("/api/posts", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-        });
-
-        // 내 글 + autoSaved만 필터링
+        const { data } = await api.get<Post[]>("/posts");
         const myDrafts = data
-          .filter(post => post.authorUsername === username && post.autoSaved)
+          .filter(post => post.autoSaved)
           .sort((a, b) => b.id - a.id);
 
         if (myDrafts.length > 0) {
@@ -56,12 +46,10 @@ export default function PostPage() {
           }
           setCurrentDraftId(latestDraft.id);
 
-          // 내 이전 임시글 삭제
+          // 이전 임시글 삭제
           await Promise.all(
             myDrafts.slice(1).map(draft =>
-              axios.delete(`/api/posts/${draft.id}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-              })
+              api.delete(`/posts/${draft.id}`)
             )
           );
         }
@@ -75,10 +63,9 @@ export default function PostPage() {
     loadMyLatestDraft();
   }, []);
 
-  // 2. 자동 저장 (5초마다, 내 임시글 id만 사용)
+  // 자동 저장 (5초마다)
   useEffect(() => {
     const autoSave = async () => {
-      const username = getCurrentUsername();
       if (!title && !content) return;
 
       try {
@@ -88,23 +75,10 @@ export default function PostPage() {
           autoSaved: true
         };
 
-        // 기존 임시글이 있으면 PUT, 없으면 POST
         if (currentDraftId) {
-          // 내 글이 맞는지 체크(프론트에서 한 번 더 안전장치)
-          const res = await axios.get<Post>(`/api/posts/${currentDraftId}`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-          });
-          if (res.data.authorUsername !== username) {
-            // 내 글이 아니면 자동 저장 금지
-            return;
-          }
-          await axios.put(`/api/posts/${currentDraftId}`, payload, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-          });
+          await api.put(`/posts/${currentDraftId}`, payload);
         } else {
-          const response = await axios.post("/api/posts", payload, {
-            headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-          });
+          const response = await api.post("/posts", payload);
           setCurrentDraftId(response.data.id);
         }
       } catch (error) {
@@ -116,10 +90,10 @@ export default function PostPage() {
     return () => clearInterval(interval);
   }, [title, content, currentDraftId]);
 
-  // 에디터 selection 저장/복원 (툴바 기능용)
+  // 에디터 selection 저장/복원
   const saveSelection = () => {
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
+    if (selection?.rangeCount) {
       savedSelection.current = selection.getRangeAt(0);
     }
   };
@@ -184,37 +158,17 @@ export default function PostPage() {
         return;
       }
 
-      // 최종 게시물 저장 (autoSaved: false)
       if (currentDraftId) {
-        // 내 글이 맞는지 체크(프론트에서 한 번 더 안전장치)
-        const username = getCurrentUsername();
-        const res = await axios.get<Post>(`/api/posts/${currentDraftId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-        });
-        if (res.data.authorUsername !== username) {
-          alert("본인 글이 아닙니다.");
-          return;
-        }
-        await axios.put(`/api/posts/${currentDraftId}`, {
+        await api.put(`/posts/${currentDraftId}`, {
           title,
           content,
           autoSaved: false
-        }, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
-        });
-
-        // 임시글 삭제 (원한다면)
-        await axios.delete(`/api/posts/${currentDraftId}`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
         });
       } else {
-        // 혹시라도 id가 없으면 새로 생성
-        await axios.post("/api/posts", {
+        await api.post("/posts", {
           title,
           content,
           autoSaved: false
-        }, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
         });
       }
 
