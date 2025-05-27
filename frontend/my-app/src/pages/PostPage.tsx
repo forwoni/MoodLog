@@ -1,16 +1,34 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../services/axiosInstance"; // axios 인스턴스 import
+import api from "../services/axiosInstance";
 import logo from "../assets/moodlog_logo_transparent.png";
 import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
+import { AxiosError } from "axios";
 
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  autoSaved: boolean;
-  authorUsername: string;
+// 서버 에러 응답 타입 정의
+interface ErrorResponse {
+  message?: string;
+  [key: string]: unknown;
+}
+
+// 타입 가드 함수
+function isAxiosError(error: unknown): error is AxiosError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "isAxiosError" in error &&
+    (error as Record<string, unknown>).isAxiosError === true
+  );
+}
+
+// 서버 응답이 ErrorResponse 타입인지 확인
+function isErrorResponse(data: unknown): data is ErrorResponse {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "message" in data
+  );
 }
 
 export default function PostPage() {
@@ -21,74 +39,10 @@ export default function PostPage() {
   const [italic, setItalic] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
   const navigate = useNavigate();
-
-  // 최신 임시글 불러오기 및 이전 임시글 삭제
-  useEffect(() => {
-    const loadMyLatestDraft = async () => {
-      try {
-        const { data } = await api.get<Post[]>("/posts");
-        const myDrafts = data
-          .filter(post => post.autoSaved)
-          .sort((a, b) => b.id - a.id);
-
-        if (myDrafts.length > 0) {
-          const latestDraft = myDrafts[0];
-          setTitle(latestDraft.title);
-          setContent(latestDraft.content);
-          if (editorRef.current) {
-            editorRef.current.innerHTML = latestDraft.content;
-          }
-          setCurrentDraftId(latestDraft.id);
-
-          // 이전 임시글 삭제
-          await Promise.all(
-            myDrafts.slice(1).map(draft =>
-              api.delete(`/posts/${draft.id}`)
-            )
-          );
-        }
-      } catch (error) {
-        console.error("임시 저장글 불러오기 실패:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMyLatestDraft();
-  }, []);
-
-  // 자동 저장 (5초마다)
-  useEffect(() => {
-    const autoSave = async () => {
-      if (!title && !content) return;
-
-      try {
-        const payload = {
-          title: title || "임시 저장 제목",
-          content: content || " ",
-          autoSaved: true
-        };
-
-        if (currentDraftId) {
-          await api.put(`/posts/${currentDraftId}`, payload);
-        } else {
-          const response = await api.post("/posts", payload);
-          setCurrentDraftId(response.data.id);
-        }
-      } catch (error) {
-        console.error("자동 저장 실패:", error);
-      }
-    };
-
-    const interval = setInterval(autoSave, 5000);
-    return () => clearInterval(interval);
-  }, [title, content, currentDraftId]);
 
   // 에디터 selection 저장/복원
   const saveSelection = () => {
@@ -158,34 +112,36 @@ export default function PostPage() {
         return;
       }
 
-      if (currentDraftId) {
-        await api.put(`/posts/${currentDraftId}`, {
-          title,
-          content,
-          autoSaved: false
-        });
-      } else {
-        await api.post("/posts", {
-          title,
-          content,
-          autoSaved: false
-        });
-      }
+      // 임시 저장 없이 무조건 새 글 생성(POST)
+      await api.post("/posts", {
+        title,
+        content,
+        autoSaved: false
+      });
 
       navigate("/history");
-    } catch (error) {
-      console.error("게시 실패:", error);
-      alert("게시에 실패했습니다.");
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response) {
+        console.error("게시 실패:", error.response.data);
+        const responseData = error.response.data;
+        if (isErrorResponse(responseData)) {
+          alert(responseData.message || "게시에 실패했습니다.");
+        } else {
+          alert(JSON.stringify(responseData) || "게시에 실패했습니다.");
+        }
+      } else if (error instanceof Error) {
+        console.error("게시 실패:", error.message);
+        alert(error.message);
+      } else {
+        console.error("게시 실패:", error);
+        alert("게시에 실패했습니다.");
+      }
     }
   };
 
   const showPlaceholder =
     (!content || content === "<br>") &&
     (!editorRef.current || editorRef.current.innerText.trim() === "");
-
-  if (isLoading) {
-    return <div className="text-center py-8">불러오는 중...</div>;
-  }
 
   return (
     <div className="min-h-screen bg-white">

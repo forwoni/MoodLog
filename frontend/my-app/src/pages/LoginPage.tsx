@@ -33,8 +33,8 @@ function LoginPage() {
       if (res.status === 200) {
         setSuccess('로그인 성공!');
         // 토큰 저장 (예시: localStorage)
-        localStorage.setItem('accessToken', res.data.accessToken);
-        localStorage.setItem('refreshToken', res.data.refreshToken);
+        localStorage.setItem('access_token', res.data.accessToken);
+        localStorage.setItem('refresh_token', res.data.refreshToken);
 
         // 아이디 저장 기능 (rememberMe)
         if (rememberMe) {

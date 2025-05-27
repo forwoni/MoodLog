@@ -1,5 +1,3 @@
-// src/services/axiosInstance.ts
-
 import axios from "axios";
 
 const getAccessToken = () => localStorage.getItem("access_token");

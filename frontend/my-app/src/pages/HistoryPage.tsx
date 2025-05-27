@@ -5,7 +5,7 @@ import { SearchBox } from "../components/searchBox";
 import { UserPlayListTitle} from "../components/UserPlayListTitle"
 import { UserPlayListDescription } from "../components/UserPlayListDescription";
 import { UserPlayListBox } from "../components/UserPlayLIstBox";
-import { HistoryBox } from "../components/HistoryBox";
+// import { HistoryBox } from "../components/HistoryBox";
 
 export default function HistoryPage(){
     return(
@@ -28,9 +28,9 @@ export default function HistoryPage(){
                     <UserPlayListBox showEditButton={true} />
                 </div>
             {/* 오른쪽: 게시글(HistoryBox) */}
-                <div className="ml-[70px] flex-1">
+                {/* <div className="ml-[70px] flex-1">
                     <HistoryBox />
-                </div>
+                </div> */}
             </div>
         </div>
 
