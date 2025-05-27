@@ -16,9 +16,10 @@ public record PostResponseDto(
         LocalDateTime updatedAt,
         int viewCount,
         int likeCount,
-        List<CommentResponseDto> comments
+        List<CommentResponseDto> comments,
+        PlaylistResponseDto playlist
 ) {
-    public static PostResponseDto from(Post post) {
+    public static PostResponseDto from(Post post, PlaylistResponseDto playlist) {
         return new PostResponseDto(
                 post.getId(),
                 post.getTitle(),
@@ -34,7 +35,8 @@ public record PostResponseDto(
                         comment.getContent(),
                         comment.getAuthor().getUsername(),
                         comment.getCreatedAt()
-                )).toList()
+                )).toList(),
+                playlist
         );
     }
 }

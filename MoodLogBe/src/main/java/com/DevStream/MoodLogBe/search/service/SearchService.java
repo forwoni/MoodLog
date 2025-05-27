@@ -22,7 +22,9 @@ public class SearchService {
         List<Post> postResults = postRepository.findByTitleContaining(keyword);
         List<User> userResults = userRepository.findByUsernameContaining(keyword);
 
-        List<PostResponseDto> posts = postResults.stream().map(PostResponseDto::from).toList();
+        List<PostResponseDto> posts = postResults.stream()
+                .map(post -> PostResponseDto.from(post, null))
+                .toList();
         List<UserResponseDto> users = userResults.stream().map(UserResponseDto::from).toList();
 
         return new SearchResponseDto(posts, users);

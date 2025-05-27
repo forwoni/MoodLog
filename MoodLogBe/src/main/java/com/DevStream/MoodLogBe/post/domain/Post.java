@@ -3,10 +3,7 @@ package com.DevStream.MoodLogBe.post.domain;
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.comment.domain.Comment;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -14,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -47,6 +45,10 @@ public class Post {
 
     @Column(nullable = false)
     private int likeCount = 0;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "playlist_id")
+    private Playlist playlist;
 
     // 좋아요 수 조작 메서드
     public void increaseLikeCount() {

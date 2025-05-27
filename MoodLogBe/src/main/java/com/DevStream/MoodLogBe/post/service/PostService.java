@@ -3,10 +3,17 @@ package com.DevStream.MoodLogBe.post.service;
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.auth.repository.UserRepository;
 import com.DevStream.MoodLogBe.comment.dto.CommentResponseDto;
+import com.DevStream.MoodLogBe.post.domain.Playlist;
 import com.DevStream.MoodLogBe.post.domain.Post;
+import com.DevStream.MoodLogBe.post.domain.Track;
+import com.DevStream.MoodLogBe.post.dto.PlaylistResponseDto;
 import com.DevStream.MoodLogBe.post.dto.PostRequestDto;
 import com.DevStream.MoodLogBe.post.dto.PostResponseDto;
+import com.DevStream.MoodLogBe.post.repository.PlaylistRepository;
 import com.DevStream.MoodLogBe.post.repository.PostRepository;
+import com.DevStream.MoodLogBe.post.repository.TrackRepository;
+import com.DevStream.MoodLogBe.recommendation.dto.EmotionResponse;
+import com.DevStream.MoodLogBe.recommendation.service.EmotionAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,9 +33,33 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final EmotionAnalysisService emotionAnalysisService;
+    private final PlaylistRepository playlistRepository;
+    private final TrackRepository trackRepository;
 
+    @Transactional
     public void create(PostRequestDto dto, User user) {
-        if(user == null) throw new IllegalArgumentException("인증된 사용자 없음");
+        if (user == null) throw new IllegalArgumentException("인증된 사용자 없음");
+
+        EmotionResponse emotionResponse = emotionAnalysisService.analyzeEmotion(dto.content());
+
+        List<Track> tracks = emotionResponse.getTracks().stream()
+                .map(dtoTrack -> {
+                    Track track = new Track();
+                    track.setTrackName(dtoTrack.getTrack_name());
+                    track.setArtist(dtoTrack.getArtist());
+                    track.setSpotifyUrl(dtoTrack.getSpotify_url());
+                    return track;
+                }).toList();
+
+        Playlist playlist = new Playlist();
+        playlist.setName(dto.title() + "의 플레이리스트");
+        playlist.setDescription("자동 생성된 플레이리스트입니다.");
+        playlist.setTracks(new ArrayList<>()); // 비어있는 트랙 리스트
+
+        tracks.forEach(track -> track.setPlaylist(playlist));
+
+        playlist.setTracks(tracks);
 
         Post post = new Post(
                 null,
@@ -36,30 +67,30 @@ public class PostService {
                 user,
                 dto.content(),
                 dto.autoSaved(),
-                null,
-                null,
+                null, // createdAt
+                null, // updatedAt
                 0,
                 new ArrayList<>(),
                 new ArrayList<>(),
-                0
+                0,
+                null //
         );
+
+        postRepository.save(post);
+
+        playlist.setPost(post);
+
+        post.setPlaylist(playlist);
+
+        playlistRepository.save(playlist);
+        trackRepository.saveAll(tracks);
+
         postRepository.save(post);
     }
 
     public List<PostResponseDto> getAll() {
         return postRepository.findAll().stream()
-                .map(post -> new PostResponseDto(
-                        post.getId(),
-                        post.getTitle(),
-                        post.getContent(),
-                        post.getAutoSaved(),
-                        post.getAuthor().getUsername(),
-                        post.getCreatedAt(),
-                        post.getUpdatedAt(),
-                        post.getViewCount(),
-                        post.getLikeCount(),
-                        List.of()
-                ))
+                .map(this::toDto)
                 .toList();
     }
 
@@ -69,28 +100,7 @@ public class PostService {
 
         post.increaseViewCount();
 
-        List<CommentResponseDto> commentDtos = post.getComments().stream()
-                .map(comment -> new CommentResponseDto(
-                        comment.getId(),
-                        comment.getContent(),
-                        comment.getAuthor().getUsername(),
-                        comment.getCreatedAt()
-                ))
-                .toList();
-
-
-        return new PostResponseDto(
-                post.getId(),
-                post.getTitle(),
-                post.getContent(),
-                post.getAutoSaved(),
-                post.getAuthor().getUsername(),
-                post.getCreatedAt(),
-                post.getUpdatedAt(),
-                post.getViewCount(),
-                post.getLikeCount(),
-                commentDtos
-        );
+        return toDto(post);
     }
 
     @Transactional
@@ -113,6 +123,7 @@ public class PostService {
 
         postRepository.delete(post);
     }
+
     @Transactional(readOnly = true)
     public Page<PostResponseDto> getPostsByUsername(String username, String sortBy, Pageable pageable) {
         User user = userRepository.findByUsername(username)
@@ -130,7 +141,36 @@ public class PostService {
         };
     }
 
+    /**
+     * Post -> PostResponseDto로 변환 (플레이리스트 정보까지 포함!)
+     */
     private PostResponseDto toDto(Post post) {
+        // 댓글 변환
+        List<CommentResponseDto> commentDtos = post.getComments().stream()
+                .map(comment -> new CommentResponseDto(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getAuthor().getUsername(),
+                        comment.getCreatedAt()
+                ))
+                .toList();
+
+        // ✅ 플레이리스트가 있으면 변환
+        PlaylistResponseDto playlistDto = null;
+        if (post.getPlaylist() != null) {
+            playlistDto = new PlaylistResponseDto(
+                    post.getPlaylist().getId(),
+                    post.getPlaylist().getName(),
+                    post.getPlaylist().getDescription(),
+                    post.getPlaylist().getTracks().stream()
+                            .map(track -> new PlaylistResponseDto.TrackDto(
+                                    track.getTrackName(),
+                                    track.getArtist(),
+                                    track.getSpotifyUrl()
+                            )).toList()
+            );
+        }
+
         return new PostResponseDto(
                 post.getId(),
                 post.getTitle(),
@@ -141,12 +181,8 @@ public class PostService {
                 post.getUpdatedAt(),
                 post.getViewCount(),
                 post.getLikeCount(),
-                post.getComments().stream().map(comment -> new CommentResponseDto(
-                        comment.getId(),
-                        comment.getContent(),
-                        comment.getAuthor().getUsername(),
-                        comment.getCreatedAt()
-                )).toList()
+                commentDtos,
+                playlistDto
         );
     }
 
