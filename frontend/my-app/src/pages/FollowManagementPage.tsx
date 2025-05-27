@@ -18,12 +18,10 @@ function SearchBox() {
 function NeighborCard({ name, onDelete }: { name: string; onDelete: () => void }) {
   const navigate = useNavigate();
 
-  // 카드 전체 클릭 시 페이지 이동
   const handleCardClick = () => {
     navigate("/otheruserhistory");
   };
 
-  // X 버튼 클릭 시 삭제, 부모 클릭 이벤트 차단
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete();
@@ -67,15 +65,18 @@ export default function FallowManagementPage() {
 
   return (
     <div className="w-[1440px] mx-auto flex flex-col items-center bg-white min-h-screen">
+      {/* 로고 클릭 시 navigate('/main')이 작동하는 HeaderBox 컴포넌트 */}
       <HeaderBox />
-      {/* 헤더와 겹치지 않게 충분한 margin-top 추가 */}
+
       <div className="w-full flex justify-center mt-[102px]">
         <UserInfoBox
           userName="사용자 이름"
           userDescription="사용자에 대한 간단한 설명"
         />
       </div>
+
       <SearchBox />
+
       <div className="w-[1100px] mx-auto mt-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-black">사용자의 모든 이웃</h2>
@@ -87,7 +88,7 @@ export default function FallowManagementPage() {
             </select>
           </div>
         </div>
-        {/* 이웃 리스트 */}
+
         <div>
           {neighbors.map((name, idx) => (
             <NeighborCard
@@ -97,9 +98,9 @@ export default function FallowManagementPage() {
             />
           ))}
         </div>
-        {/* 페이지네이션 */}
+
         <div className="flex justify-end mt-8 text-gray-400 gap-2 text-sm">
-          {[1,2,3,4,5,6,7,8,9,10].map((num) => (
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
             <button
               key={num}
               className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200"

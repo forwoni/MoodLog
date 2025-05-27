@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import defaultProfile from '../assets/defaultProfile.png';
 
 function MyPage() {
@@ -10,9 +11,10 @@ function MyPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragStart = useRef({ x: 0, y: 0 });
 
-  const [nickname, setNickname] = useState('홍길동');
-  const [email, setEmail] = useState('abcde@gmail.com');
-  const [password, setPassword] = useState('password');
+  const [nickname, setNickname] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [profileImage, setProfileImage] = useState<string>(defaultProfile);
@@ -24,6 +26,23 @@ function MyPage() {
     const handleMouseUp = () => setDragging(false);
     window.addEventListener('mouseup', handleMouseUp);
     return () => window.removeEventListener('mouseup', handleMouseUp);
+  }, []);
+
+  // 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        const res = await axios.get('/api/users/me', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setNickname(res.data.username);
+        setEmail(res.data.email);
+      } catch (err) {
+        console.error('사용자 정보 조회 실패:', err);
+      }
+    };
+    fetchUserInfo();
   }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,10 +60,7 @@ function MyPage() {
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setScale((prev) => {
-      const newScale = prev + (e.deltaY < 0 ? 0.05 : -0.05);
-      return Math.min(Math.max(newScale, 0.5), 2);
-    });
+    setScale((prev) => Math.min(Math.max(prev + (e.deltaY < 0 ? 0.05 : -0.05), 0.5), 2));
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -64,10 +80,26 @@ function MyPage() {
   };
 
   const handleSave = () => setShowPopup(true);
-  const handleConfirm = () => {
-    setShowPopup(false);
-    navigate(from || '/main');
+
+  const handleConfirm = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      await axios.put('/api/users/me', {
+        currentPassword,
+        newUsername: nickname,
+        newPassword: password,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert('정보가 성공적으로 수정되었습니다.');
+      setShowPopup(false);
+      navigate(from || '/main');
+    } catch (err) {
+      console.error('정보 수정 실패:', err);
+      alert('정보 수정에 실패했습니다.');
+    }
   };
+
   const handleCancel = () => {
     setShowPopup(false);
     navigate(from || '/main');
@@ -76,14 +108,11 @@ function MyPage() {
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-white">
       <div className="w-[420px] h-[580px] border rounded-md shadow-md flex flex-col px-6 py-4 justify-between">
-        {/* 헤더 */}
         <header className="border-b pb-3">
           <h1 className="text-2xl font-bold">마이 페이지</h1>
         </header>
 
-        {/* 본문 */}
         <div className="flex gap-4 mt-4">
-          {/* 왼쪽: 프로필 */}
           <div className="flex flex-col items-center w-1/2">
             <div
               className="w-24 h-24 rounded-full overflow-hidden border cursor-move select-none"
@@ -96,9 +125,7 @@ function MyPage() {
                 src={profileImage}
                 alt="프로필"
                 className="w-full h-full object-cover transition-transform duration-150 pointer-events-none"
-                style={{
-                  transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
-                }}
+                style={{ transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)` }}
               />
             </div>
             <button
@@ -116,7 +143,6 @@ function MyPage() {
             />
           </div>
 
-          {/* 오른쪽: 입력 필드 */}
           <div className="w-1/2 space-y-3">
             <div>
               <label className="font-bold block mb-1">닉네임</label>
@@ -132,12 +158,21 @@ function MyPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                readOnly
+                className="w-full h-10 px-3 border bg-gray-100 rounded focus:outline-none text-gray-500"
+              />
+            </div>
+            <div>
+              <label className="font-bold block mb-1">현재 비밀번호</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
                 className="w-full h-10 px-3 border rounded focus:outline-none focus:border-black"
               />
             </div>
             <div className="relative w-full">
-              <label className="font-bold block mb-1">비밀번호</label>
+              <label className="font-bold block mb-1">새 비밀번호</label>
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
@@ -147,7 +182,7 @@ function MyPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 text-sm text-black flex items-center justify-center leading-none"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 text-sm text-black flex items-center justify-center"
               >
                 {showPassword ? '숨기기' : '보기'}
               </button>
@@ -155,7 +190,6 @@ function MyPage() {
           </div>
         </div>
 
-        {/* 저장 / 취소 버튼 */}
         <div className="flex justify-center gap-6 mt-6">
           <button
             onClick={handleSave}
@@ -171,7 +205,6 @@ function MyPage() {
           </button>
         </div>
 
-        {/* 팝업 */}
         {showPopup && (
           <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-40 z-10">
             <div className="bg-white p-6 rounded shadow-lg w-80 text-center">
