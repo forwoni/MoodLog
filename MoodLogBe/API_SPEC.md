@@ -370,6 +370,64 @@
 * **Response:** `200 OK` (Page<PostResponseDto>)
 
 ---
+## 👤 유저 Playlist 조회
+
+* **URL:** `GET /api/users/{username}/posts`
+* **인증 필요:** ❌ (공개)
+* **Path Variable: {username}**
+* **Response:** `200 OK`
+* 
+```json (리스트 반환입니다.)
+[
+  {
+    "id": 6,
+    "name": "오늘의 기분의 플레이리스트",
+    "description": "자동 생성된 플레이리스트입니다.",
+    "tracks": [
+      {
+        "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
+        "artist": "ILLENIUM",
+        "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
+      },
+      {
+        "trackName": "old song",
+        "artist": "Standing Egg",
+        "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
+      },
+      {
+        "trackName": "Sad Song - Remastered",
+        "artist": "Oasis",
+        "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
+      },
+      {
+        "trackName": "Sadder Than Yesterday",
+        "artist": "Kim Gun Mo",
+        "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
+      },
+      {
+        "trackName": "SAD!",
+        "artist": "XXXTENTACION",
+        "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
+      },
+      {
+        "trackName": "Are you happy?",
+        "artist": "shy martin",
+        "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
+      },
+      {
+        "trackName": "슬픈 초대장",
+        "artist": "Han Kyung Il",
+        "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
+      },
+      {
+        "trackName": "SAD SONG",
+        "artist": "CHANMINA",
+        "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
+      }
+    ]
+  }
+]
+```
 
 ## 📂 Comment
 
