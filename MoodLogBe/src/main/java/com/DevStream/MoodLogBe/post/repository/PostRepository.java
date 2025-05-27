@@ -23,4 +23,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findPostsByAuthorOrderByCommentCountDesc(@Param("username") String username, Pageable pageable);
     List<Post> findByTitleContaining(String keyword);
     List<Post> findByTitleContainingOrContentContaining(String titleKeyword, String contentKeyword);
+    // 좋아요가 많은 순으로 상위 N개
+    List<Post> findTopNByOrderByLikeCountDesc(Pageable pageable);
+
+    // 댓글이 많은 순으로 상위 N개
+    @Query("""
+    SELECT p FROM Post p
+    LEFT JOIN p.comments c
+    GROUP BY p
+    ORDER BY COUNT(c) DESC
+    """)
+    List<Post> findTopNByOrderByCommentCountDesc(Pageable pageable);
 }
