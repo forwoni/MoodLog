@@ -330,7 +330,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                           ? "bg-blue-50"
                           : ""
                       }`}
-                      onClick={() => navigate(`/profile/${user.username}`)}
+                      onClick={() => navigate(`/user/${user.username}/posts`)}
                     >
                       <div className="font-medium text-gray-900">
                         @{user.username}
