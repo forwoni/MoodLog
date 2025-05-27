@@ -6,6 +6,7 @@ import com.DevStream.MoodLogBe.auth.repository.UserRepository;
 import com.DevStream.MoodLogBe.post.domain.Post;
 import com.DevStream.MoodLogBe.post.dto.PostResponseDto;
 import com.DevStream.MoodLogBe.post.repository.PostRepository;
+import com.DevStream.MoodLogBe.post.service.PostService;
 import com.DevStream.MoodLogBe.search.dto.SearchResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,14 +18,19 @@ import java.util.List;
 public class SearchService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final PostService postService;
 
     public SearchResponseDto search(String keyword) {
-        List<Post> postResults = postRepository.findByTitleContaining(keyword);
+        List<Post> postResults = postRepository.findByTitleContainingOrContentContaining(keyword, keyword);
         List<User> userResults = userRepository.findByUsernameContaining(keyword);
 
-        List<PostResponseDto> posts = postResults.stream().map(PostResponseDto::from).toList();
+        List<PostResponseDto> posts = postResults.stream()
+                .map(postService::toDto) // 🔥 playlist 포함된 toDto!
+                .toList();
+
         List<UserResponseDto> users = userResults.stream().map(UserResponseDto::from).toList();
 
         return new SearchResponseDto(posts, users);
     }
+
 }

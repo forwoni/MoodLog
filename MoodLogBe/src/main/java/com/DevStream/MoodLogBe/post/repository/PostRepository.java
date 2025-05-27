@@ -22,4 +22,5 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     """)
     Page<Post> findPostsByAuthorOrderByCommentCountDesc(@Param("username") String username, Pageable pageable);
     List<Post> findByTitleContaining(String keyword);
+    List<Post> findByTitleContainingOrContentContaining(String titleKeyword, String contentKeyword);
 }

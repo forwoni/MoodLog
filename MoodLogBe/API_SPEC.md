@@ -184,16 +184,63 @@
 ```json
 [
   {
-    "id": 1,
-    "title": "string",
-    "content": "string",
+    "id": 6,
+    "title": "오늘의 기분",
+    "content": "조금 우울하지만 괜찮아질 거야",
     "autoSaved": false,
-    "authorUsername": "string",
-    "createdAt": "yyyy-MM-ddTHH:mm:ss",
-    "updatedAt": "yyyy-MM-ddTHH:mm:ss",
+    "authorName": "woni",
+    "createdAt": "2025-05-27T15:16:04.8162",
+    "updatedAt": "2025-05-27T15:16:04.830484",
     "viewCount": 0,
     "likeCount": 0,
-    "comments": []
+    "comments": [],
+    "playlist": {
+      "id": 6,
+      "name": "오늘의 기분의 플레이리스트",
+      "description": "자동 생성된 플레이리스트입니다.",
+      "tracks": [
+        {
+          "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
+          "artist": "ILLENIUM",
+          "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
+        },
+        {
+          "trackName": "old song",
+          "artist": "Standing Egg",
+          "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
+        },
+        {
+          "trackName": "Sad Song - Remastered",
+          "artist": "Oasis",
+          "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
+        },
+        {
+          "trackName": "Sadder Than Yesterday",
+          "artist": "Kim Gun Mo",
+          "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
+        },
+        {
+          "trackName": "SAD!",
+          "artist": "XXXTENTACION",
+          "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
+        },
+        {
+          "trackName": "Are you happy?",
+          "artist": "shy martin",
+          "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
+        },
+        {
+          "trackName": "슬픈 초대장",
+          "artist": "Han Kyung Il",
+          "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
+        },
+        {
+          "trackName": "SAD SONG",
+          "artist": "CHANMINA",
+          "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
+        }
+      ]
+    }
   }
 ]
 ```
@@ -204,7 +251,68 @@
 
 * **URL:** `GET /api/posts/{id}`
 * **인증 필요:** ✅
-* **Response:** `200 OK` (위와 동일 구조)
+* **Response:** `200 OK` (위와 동일 구조이나 리스트 반환이 아님)
+```json
+  {
+  "id": 6,
+  "title": "오늘의 기분",
+  "content": "조금 우울하지만 괜찮아질 거야",
+  "autoSaved": false,
+  "authorName": "woni",
+  "createdAt": "2025-05-27T15:16:04.8162",
+  "updatedAt": "2025-05-27T15:16:04.830484",
+  "viewCount": 1,
+  "likeCount": 0,
+  "comments": [],
+  "playlist": {
+    "id": 6,
+    "name": "오늘의 기분의 플레이리스트",
+    "description": "자동 생성된 플레이리스트입니다.",
+    "tracks": [
+      {
+        "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
+        "artist": "ILLENIUM",
+        "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
+      },
+      {
+        "trackName": "old song",
+        "artist": "Standing Egg",
+        "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
+      },
+      {
+        "trackName": "Sad Song - Remastered",
+        "artist": "Oasis",
+        "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
+      },
+      {
+        "trackName": "Sadder Than Yesterday",
+        "artist": "Kim Gun Mo",
+        "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
+      },
+      {
+        "trackName": "SAD!",
+        "artist": "XXXTENTACION",
+        "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
+      },
+      {
+        "trackName": "Are you happy?",
+        "artist": "shy martin",
+        "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
+      },
+      {
+        "trackName": "슬픈 초대장",
+        "artist": "Han Kyung Il",
+        "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
+      },
+      {
+        "trackName": "SAD SONG",
+        "artist": "CHANMINA",
+        "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
+      }
+    ]
+  }
+}
+```
 * **예외:**
 
     * `404`: 게시글 없음
@@ -384,25 +492,85 @@ true // 또는 false
 {
   "posts": [
     {
-      "id": 1,
-      "title": "string",
-      "content": "string",
+      "id": 6,
+      "title": "오늘의 기분",
+      "content": "조금 우울하지만 괜찮아질 거야",
       "autoSaved": false,
-      "authorUsername": "string",
-      "createdAt": "yyyy-MM-ddTHH:mm:ss",
-      "updatedAt": "yyyy-MM-ddTHH:mm:ss",
+      "authorName": "woni",
+      "createdAt": "2025-05-27T15:16:04.8162",
+      "updatedAt": "2025-05-27T15:16:04.830484",
       "viewCount": 0,
       "likeCount": 0,
-      "comments": []
+      "comments": [],
+      "playlist": {
+        "id": 6,
+        "name": "오늘의 기분의 플레이리스트",
+        "description": "자동 생성된 플레이리스트입니다.",
+        "tracks": [
+          {
+            "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
+            "artist": "ILLENIUM",
+            "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
+          },
+          {
+            "trackName": "old song",
+            "artist": "Standing Egg",
+            "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
+          },
+          {
+            "trackName": "Sad Song - Remastered",
+            "artist": "Oasis",
+            "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
+          },
+          {
+            "trackName": "Sadder Than Yesterday",
+            "artist": "Kim Gun Mo",
+            "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
+          },
+          {
+            "trackName": "SAD!",
+            "artist": "XXXTENTACION",
+            "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
+          },
+          {
+            "trackName": "Are you happy?",
+            "artist": "shy martin",
+            "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
+          },
+          {
+            "trackName": "슬픈 초대장",
+            "artist": "Han Kyung Il",
+            "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
+          },
+          {
+            "trackName": "SAD SONG",
+            "artist": "CHANMINA",
+            "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
+          }
+        ]
+      }
     }
   ],
-  "users": [
-    {
-      "id": 1,
-      "username": "string",
-      "email": "string"
-    }
-  ]
+  "users": []
+}
+```
+유저 네임이 검색 되면?
+
+```json
+{
+    "posts": [],
+    "users": [
+        {
+            "id": 1,
+            "username": "woni",
+            "email": "ktion@naver.com"
+        },
+        {
+            "id": 2,
+            "username": "woni1",
+            "email": "ktion1@naver.com"
+        }
+    ]
 }
 ```
 
@@ -423,14 +591,17 @@ true // 또는 false
 ```json
 [
   {
-    "keyword": "won",
-    "posts": [...],
-    "users": [...]
+    "keyword": "오늘1",
+    "searchedAt": "2025-05-27T15:48:16.275228"
+  },
+  {
+    "keyword": "오늘",
+    "searchedAt": "2025-05-27T15:47:14.787072"
   }
 ]
 ```
 
-* **기능:** 현재 로그인된 사용자의 최근 검색 기록과 해당 결과를 반환
+* **기능:** 현재 로그인된 사용자의 최근 검색 기록과 해당 결과를 반환 
 
 ---
 
