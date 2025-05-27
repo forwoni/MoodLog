@@ -76,7 +76,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     if (!currentUser) return;
     try {
       const { data } = await api.get<SearchHistory[]>("/search/histories");
-      setSearchHistory(data.slice(0, 8));
+      setSearchHistory(data.slice(0, 5));
     } catch { /* 무시 */ }
   }, [currentUser]);
 
