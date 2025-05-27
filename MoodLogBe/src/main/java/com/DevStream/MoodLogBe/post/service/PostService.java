@@ -144,7 +144,7 @@ public class PostService {
     /**
      * Post -> PostResponseDto로 변환 (플레이리스트 정보까지 포함!)
      */
-    private PostResponseDto toDto(Post post) {
+    public PostResponseDto toDto(Post post) {
         // 댓글 변환
         List<CommentResponseDto> commentDtos = post.getComments().stream()
                 .map(comment -> new CommentResponseDto(

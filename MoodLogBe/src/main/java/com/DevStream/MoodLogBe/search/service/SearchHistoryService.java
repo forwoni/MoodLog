@@ -21,6 +21,7 @@ public class SearchHistoryService {
                 .ifPresentOrElse(history -> {
                     // 기존 검색어가 있으면 updatedAt만 갱신
                     history.updateTimestamp();
+                    searchHistoryRepository.save(history); // ⭐️⭐️⭐️ save 명시적으로 호출!
                 }, () -> {
                     // 없으면 새로 저장
                     SearchHistory newHistory = SearchHistory.builder()
