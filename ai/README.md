@@ -36,17 +36,17 @@
 ai/
 ├── issues/                          # 작업 중 이슈 문서 정리
 ├── modules/                         # 감정 분석, Spotify 추천 로직 모듈
-│   ├── emotion\_analyzer.py          # 감정 분석 (rule-based or 모델 기반)
-│   ├── emotion\_analyzer_.py          # 감정 분석 (rule-based or 모델 기반)
-│   └── spotify\_helper.py            # 감정 → 키워드 매핑 및 Spotify API 호출
+│   ├── emotion\_analyzer.py         # 감정 분석 (rule-based or 모델 기반)
+│   ├── emotion\_analyzer_.py        # 감정 분석 (rule-based or 모델 기반)
+│   └── spotify\_helper.py           # 감정 → 키워드 매핑 및 Spotify API 호출
 │   └── info.py
-│   └── main.py                        # API 기본 틀
-│   └── Issue3_2_test_main.py            # 감정분석 & 곡 추천 API
+│   └── main.py                      # API 기본 틀
+│   └── Issue3_2_test_main.py        # 감정분석 & 곡 추천 API
 ├── venv/                            # 가상 환경 디렉토리 (로컬 실행용, Git 추적 제외)
 ├── .gitignore                       # **pycache** 및 venv 등 Git 추적 제외 설정
-├── .gitignore\_backup\_from\_root      # 기존 루트에서 이동한 백업 gitignore
+├── .gitignore\_backup\_from\_root   # 기존 루트에서 이동한 백업 gitignore
 ├── README.md                        # 본 파일
-├── emotion\_api\_spec.md              # 감정 분석/추천 API 명세서
+├── emotion\_api\_spec.md            # 감정 분석/추천 API 명세서
 
 ````
 
@@ -55,33 +55,6 @@ ai/
 ## 🔗 API 명세서
 
 https://github.com/forwoni/MoodLog/blob/develop/ai/emotion_api_spec.md
-
----
-
-## 💡 예시 요청 & 응답
-
-**요청**
-```json
-{
-  "text": "요즘 너무 지치고 힘들어서 아무것도 하기 싫어."
-}
-````
-
-**응답**
-
-```json
-{
-  "emotion": "우울",
-  "recommended_tracks": [
-    {
-      "title": "Someone Like You",
-      "artist": "Adele",
-      "url": "https://open.spotify.com/track/xxx"
-    },
-    ...
-  ]
-}
-```
 
 ---
 
