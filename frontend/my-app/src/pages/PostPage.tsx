@@ -4,43 +4,22 @@ import api from "../services/axiosInstance";
 import logo from "../assets/moodlog_logo_transparent.png";
 import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
+import { useUser } from "../contexts/UserContext";
 import { AxiosError } from "axios";
 
-// 서버 에러 응답 타입 정의
-interface ErrorResponse {
-  message?: string;
-  [key: string]: unknown;
-}
-
-// 타입 가드 함수
-function isAxiosError(error: unknown): error is AxiosError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "isAxiosError" in error &&
-    (error as Record<string, unknown>).isAxiosError === true
-  );
-}
-
-// 서버 응답이 ErrorResponse 타입인지 확인
-function isErrorResponse(data: unknown): data is ErrorResponse {
-  return (
-    typeof data === "object" &&
-    data !== null &&
-    "message" in data
-  );
-}
-
-// 임시글/게시글 타입
 interface Post {
   id: number;
   title: string;
   content: string;
   autoSaved: boolean;
-  authorUsername: string;
+  authorName: string;
+  createdAt: string;
 }
 
 export default function PostPage() {
+  const { currentUser, logout } = useUser();
+  const navigate = useNavigate();
+
   const [font, setFont] = useState("Arial");
   const [fontSize, setFontSize] = useState(16);
   const [align, setAlign] = useState("left");
@@ -53,13 +32,23 @@ export default function PostPage() {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
-  const navigate = useNavigate();
 
-  // 1. 최신 임시글 불러오기 및 이전 임시글 삭제
+  // 1. 최신 임시글 불러오기
   useEffect(() => {
-    const loadMyLatestDraft = async () => {
+    const loadLatestDraft = async () => {
       try {
-        const { data } = await api.get<Post[]>("/posts");
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          alert("로그인이 필요합니다");
+          navigate("/login");
+          return;
+        }
+
+        const { data } = await api.get<Post[]>("/posts", {
+          params: { autoSaved: true },
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
         const myDrafts = data
           .filter(post => post.autoSaved)
           .sort((a, b) => b.id - a.id);
@@ -73,27 +62,29 @@ export default function PostPage() {
           }
           setCurrentDraftId(latestDraft.id);
 
-          // 이전 임시글 삭제
           await Promise.all(
             myDrafts.slice(1).map(draft =>
-              api.delete(`/posts/${draft.id}`)
+              api.delete(`/posts/${draft.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
             )
           );
         }
       } catch (error) {
         console.error("임시 저장글 불러오기 실패:", error);
+        alert("임시 저장글을 불러오지 못했습니다");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadMyLatestDraft();
+    loadLatestDraft();
   }, []);
 
-  // 2. 자동 저장 (5초마다)
+  // 2. 자동 저장 기능
   useEffect(() => {
     const autoSave = async () => {
-      if (!title && !content) return;
+      if (!currentUser?.username || (!title && !content)) return;
 
       try {
         const payload = {
@@ -105,8 +96,8 @@ export default function PostPage() {
         if (currentDraftId) {
           await api.put(`/posts/${currentDraftId}`, payload);
         } else {
-          const response = await api.post("/posts", payload);
-          setCurrentDraftId(response.data.id);
+          const { data } = await api.post("/posts", payload);
+          setCurrentDraftId(data.id);
         }
       } catch (error) {
         console.error("자동 저장 실패:", error);
@@ -115,9 +106,55 @@ export default function PostPage() {
 
     const interval = setInterval(autoSave, 5000);
     return () => clearInterval(interval);
-  }, [title, content, currentDraftId]);
+  }, [title, content, currentDraftId, currentUser]);
 
-  // 에디터 selection 저장/복원
+  // 3. 게시 기능 (수정된 부분)
+  const handlePublish = async () => {
+    if (!title.trim()) {
+      alert("제목을 입력해주세요");
+      return;
+    }
+    try {
+      const payload = {
+        title,
+        content,
+        autoSaved: false
+      };
+
+      let postId: number | null = null;
+
+      if (currentDraftId) {
+        // Case 1: 임시글을 게시하는 경우 (id를 알고 있음)
+        await api.put(`/posts/${currentDraftId}`, payload);
+        postId = currentDraftId;
+      } else {
+        // Case 2: 새 글을 게시하는 경우 (id를 모름)
+        await api.post("/posts", payload);
+
+        // 전체 게시글 목록에서 내 최신 글 찾기
+        const { data: posts } = await api.get<Post[]>("/posts");
+        const myPosts = posts
+          .filter(post => post.authorName === currentUser?.username)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        if (myPosts.length > 0) {
+          postId = myPosts[0].id;
+        }
+      }
+
+      if (!postId) {
+        alert("게시글 ID를 찾을 수 없습니다.");
+        return;
+      }
+
+      navigate(`/userpostdetail/${postId}`);
+    } catch (error) {
+      const err = error as AxiosError<{ message?: string }>;
+      alert(err.response?.data?.message || "게시 실패");
+      if (err.response?.status === 401) logout();
+    }
+  };
+  // 에디터 선택 영역 관리
   const saveSelection = () => {
     const selection = window.getSelection();
     if (selection?.rangeCount) {
@@ -153,16 +190,13 @@ export default function PostPage() {
   const handleFontSizeChange = (size: number) => {
     saveSelection();
     setFontSize(size);
+    handleCommand("fontSize", "7");
     setTimeout(() => {
-      restoreSelection();
-      handleCommand("fontSize", "7");
-      setTimeout(() => {
-        const fontElements = editorRef.current?.querySelectorAll("font[size='7']");
-        fontElements?.forEach((el) => {
-          (el as HTMLElement).removeAttribute("size");
-          (el as HTMLElement).style.fontSize = `${size}px`;
-        });
-      }, 0);
+      const elements = editorRef.current?.querySelectorAll('font[size="7"]');
+      elements?.forEach(el => {
+        (el as HTMLElement).style.fontSize = `${size}px`;
+        el.removeAttribute("size");
+      });
     }, 0);
   };
 
@@ -177,55 +211,11 @@ export default function PostPage() {
     setContent(editorRef.current?.innerHTML || "");
   };
 
-  // 3. 게시물 최종 제출 (임시글이면 autoSaved: false로 전환)
-  const handlePublish = async () => {
-    try {
-      if (!title.trim()) {
-        alert("제목을 입력해주세요");
-        return;
-      }
-
-      if (currentDraftId) {
-        await api.put(`/posts/${currentDraftId}`, {
-          title,
-          content,
-          autoSaved: false
-        });
-      } else {
-        await api.post("/posts", {
-          title,
-          content,
-          autoSaved: false
-        });
-      }
-
-      navigate("/history");
-    } catch (error: unknown) {
-      if (isAxiosError(error) && error.response) {
-        console.error("게시 실패:", error.response.data);
-        const responseData = error.response.data;
-        if (isErrorResponse(responseData)) {
-          alert(responseData.message || "게시에 실패했습니다.");
-        } else {
-          alert(JSON.stringify(responseData) || "게시에 실패했습니다.");
-        }
-      } else if (error instanceof Error) {
-        console.error("게시 실패:", error.message);
-        alert(error.message);
-      } else {
-        console.error("게시 실패:", error);
-        alert("게시에 실패했습니다.");
-      }
-    }
-  };
-
   const showPlaceholder =
     (!content || content === "<br>") &&
     (!editorRef.current || editorRef.current.innerText.trim() === "");
 
-  if (isLoading) {
-    return <div className="text-center py-8">불러오는 중...</div>;
-  }
+  if (isLoading) return <div className="text-center py-8">불러오는 중...</div>;
 
   return (
     <div className="min-h-screen bg-white">
