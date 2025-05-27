@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SearchBox from '../components/searchBox';
 import logo from '../assets/moodlog_logo_transparent.png';
 import {
   Bell,
@@ -14,20 +15,19 @@ import {
 } from 'lucide-react';
 
 function MainPage() {
-  const [searchTerm, setSearchTerm] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
 
-  const notifRef = useRef(null);
-  const profileRef = useRef(null);
+  const notifRef = useRef<HTMLDivElement>(null);     
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (notifRef.current && !(notifRef.current as any).contains(e.target)) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setShowNotifications(false);
       }
-      if (profileRef.current && !(profileRef.current as any).contains(e.target)) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setShowProfileMenu(false);
       }
     };
@@ -47,24 +47,8 @@ function MainPage() {
           onClick={() => navigate('/main')}
         />
 
-        {/* 검색창 */}
-        <div className="relative w-[1200px]">
-          <input
-            type="text"
-            placeholder="검색어를 입력하세요"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-24 py-6 rounded-full outline-none text-2xl bg-white placeholder-gray-400 shadow"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500"
-            >
-              <X size={28} />
-            </button>
-          )}
-        </div>
+        {/* 검색창 컴포넌트로 대체 */}
+      <SearchBox />
 
         <div className="absolute top-10 right-14 flex gap-10">
           <Bell className="w-9 h-9 cursor-pointer" onClick={() => setShowNotifications(!showNotifications)} />
