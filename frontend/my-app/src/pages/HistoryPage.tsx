@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
-import { SearchBox } from "../components/searchBox";
+import SearchBox from "../components/searchBox";
 import { UserPlayListTitle } from "../components/UserPlayListTitle";
 import { UserPlayListBox } from "../components/UserPlayLIstBox";
 import HistoryBox from "../components/HistoryBox";
