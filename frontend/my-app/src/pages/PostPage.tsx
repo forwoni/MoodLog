@@ -1,22 +1,122 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import logo from "../assets/moodlog_logo_transparent.png";
 import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
 
+// 사용자 정보는 실제로는 context 등에서 받아오는 것이 안전합니다.
+const getCurrentUsername = () => localStorage.getItem("username") || "";
+
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  autoSaved: boolean;
+  authorUsername: string;
+}
+
 export default function PostPage() {
-  const [font, setFont] = useState("글씨체 1");
+  const [font, setFont] = useState("Arial");
   const [fontSize, setFontSize] = useState(16);
   const [align, setAlign] = useState("left");
   const [bold, setBold] = useState(false);
   const [italic, setItalic] = useState(false);
+
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [content, setContent] = useState("");
+  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
-
   const navigate = useNavigate();
 
+  // 1. 최신 임시글(내가 작성한 것만) 불러오기 및 이전 임시글 삭제
+  useEffect(() => {
+    const loadMyLatestDraft = async () => {
+      try {
+        const username = getCurrentUsername();
+        // 내 글만 조회 (정렬: 최신순, 임시글만)
+        const { data } = await axios.get<Post[]>("/api/posts", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+        });
+
+        // 내 글 + autoSaved만 필터링
+        const myDrafts = data
+          .filter(post => post.authorUsername === username && post.autoSaved)
+          .sort((a, b) => b.id - a.id);
+
+        if (myDrafts.length > 0) {
+          const latestDraft = myDrafts[0];
+          setTitle(latestDraft.title);
+          setContent(latestDraft.content);
+          if (editorRef.current) {
+            editorRef.current.innerHTML = latestDraft.content;
+          }
+          setCurrentDraftId(latestDraft.id);
+
+          // 내 이전 임시글 삭제
+          await Promise.all(
+            myDrafts.slice(1).map(draft =>
+              axios.delete(`/api/posts/${draft.id}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+              })
+            )
+          );
+        }
+      } catch (error) {
+        console.error("임시 저장글 불러오기 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMyLatestDraft();
+  }, []);
+
+  // 2. 자동 저장 (5초마다, 내 임시글 id만 사용)
+  useEffect(() => {
+    const autoSave = async () => {
+      const username = getCurrentUsername();
+      if (!title && !content) return;
+
+      try {
+        const payload = {
+          title: title || "임시 저장 제목",
+          content: content || " ",
+          autoSaved: true
+        };
+
+        // 기존 임시글이 있으면 PUT, 없으면 POST
+        if (currentDraftId) {
+          // 내 글이 맞는지 체크(프론트에서 한 번 더 안전장치)
+          const res = await axios.get<Post>(`/api/posts/${currentDraftId}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+          });
+          if (res.data.authorUsername !== username) {
+            // 내 글이 아니면 자동 저장 금지
+            return;
+          }
+          await axios.put(`/api/posts/${currentDraftId}`, payload, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+          });
+        } else {
+          const response = await axios.post("/api/posts", payload, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+          });
+          setCurrentDraftId(response.data.id);
+        }
+      } catch (error) {
+        console.error("자동 저장 실패:", error);
+      }
+    };
+
+    const interval = setInterval(autoSave, 5000);
+    return () => clearInterval(interval);
+  }, [title, content, currentDraftId]);
+
+  // 에디터 selection 저장/복원 (툴바 기능용)
   const saveSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) {
@@ -33,6 +133,7 @@ export default function PostPage() {
     }
   };
 
+  // 에디터 명령 실행
   const handleCommand = (command: string, value?: string) => {
     saveSelection();
     document.execCommand(command, false, value);
@@ -41,6 +142,7 @@ export default function PostPage() {
     setItalic(document.queryCommandState("italic"));
   };
 
+  // 툴바 핸들러
   const handleFontChange = (font: string) => {
     saveSelection();
     setFont(font);
@@ -69,21 +171,71 @@ export default function PostPage() {
     handleCommand(`justify${align.charAt(0).toUpperCase() + align.slice(1)}`);
   };
 
+  // 본문 입력 핸들러
   const handleBodyInput = () => {
-    setBody(editorRef.current?.innerHTML || "");
+    setContent(editorRef.current?.innerHTML || "");
+  };
+
+  // 게시물 최종 제출
+  const handlePublish = async () => {
+    try {
+      if (!title.trim()) {
+        alert("제목을 입력해주세요");
+        return;
+      }
+
+      // 최종 게시물 저장 (autoSaved: false)
+      if (currentDraftId) {
+        // 내 글이 맞는지 체크(프론트에서 한 번 더 안전장치)
+        const username = getCurrentUsername();
+        const res = await axios.get<Post>(`/api/posts/${currentDraftId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+        });
+        if (res.data.authorUsername !== username) {
+          alert("본인 글이 아닙니다.");
+          return;
+        }
+        await axios.put(`/api/posts/${currentDraftId}`, {
+          title,
+          content,
+          autoSaved: false
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+        });
+
+        // 임시글 삭제 (원한다면)
+        await axios.delete(`/api/posts/${currentDraftId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+        });
+      } else {
+        // 혹시라도 id가 없으면 새로 생성
+        await axios.post("/api/posts", {
+          title,
+          content,
+          autoSaved: false
+        }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` }
+        });
+      }
+
+      navigate("/history");
+    } catch (error) {
+      console.error("게시 실패:", error);
+      alert("게시에 실패했습니다.");
+    }
   };
 
   const showPlaceholder =
-    (!body || body === "<br>") &&
+    (!content || content === "<br>") &&
     (!editorRef.current || editorRef.current.innerText.trim() === "");
 
-  const handleSubmit = () => {
-    navigate("/history");
-  };
+  if (isLoading) {
+    return <div className="text-center py-8">불러오는 중...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ✅ 왼쪽 정렬된 로고 */}
+      {/* 헤더 */}
       <div className="w-full bg-white py-4 px-10 shadow-md flex justify-start items-center">
         <img
           src={logo}
@@ -130,7 +282,7 @@ export default function PostPage() {
           </button>
           <button
             className="ml-auto px-4 py-2 bg-black text-white rounded"
-            onClick={handleSubmit}
+            onClick={handlePublish}
           >
             게시하기
           </button>
