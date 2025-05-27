@@ -36,7 +36,6 @@ interface Post {
   comments: Comment[];
   playlist?: Playlist;
 }
-
 export default function OtherUserHistoryPage() {
   const { username } = useParams<{ username: string }>();
   const [posts, setPosts] = useState<Post[]>([]);
