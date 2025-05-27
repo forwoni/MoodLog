@@ -1,8 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/moodlog_logo_transparent.png';
-import { Bell, User, X, Pencil, Heart, Folder, LogOut, FileText, Settings } from 'lucide-react';
-// import OptimizedSpotifyChart from '../components/PopularChart'; // 필요 시 사용 가능
+import {
+  Bell,
+  User,
+  X,
+  Pencil,
+  Heart,
+  Folder,
+  LogOut,
+  FileText,
+  Settings
+} from 'lucide-react';
 
 function MainPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,7 +39,13 @@ function MainPage() {
     <div className="w-screen h-screen flex flex-col bg-[#F1F1F1] overflow-hidden text-[1.5rem]">
       {/* 상단 영역 */}
       <header className="h-[50%] bg-[#DAD6D6] flex flex-col items-center justify-center relative">
-        <img src={logo} alt="Mood Log" className="h-72 mb-12" />
+        {/* 로고 클릭 시 메인으로 */}
+        <img
+          src={logo}
+          alt="Mood Log"
+          className="h-72 mb-12 cursor-pointer"
+          onClick={() => navigate('/main')}
+        />
 
         {/* 검색창 */}
         <div className="relative w-[1200px]">
@@ -75,9 +90,6 @@ function MainPage() {
                 </div>
               </div>
             ))}
-            {/* 또는 아래 컴포넌트로 대체 가능
-            <OptimizedSpotifyChart />
-            */}
           </div>
         </section>
 
@@ -97,7 +109,10 @@ function MainPage() {
             >
               <Heart className="w-8 h-8 text-black" /> 인기 글
             </button>
-            <button className="flex items-center gap-4 px-8 py-6 bg-white rounded-lg shadow border hover:bg-gray-100 text-2xl font-semibold w-80">
+            <button
+              onClick={() => navigate('/followmanagement')}
+              className="flex items-center gap-4 px-8 py-6 bg-white rounded-lg shadow border hover:bg-gray-100 text-2xl font-semibold w-80"
+            >
               <Folder className="w-8 h-8 text-black" /> 이웃 글
             </button>
           </section>
@@ -159,3 +174,4 @@ function MainPage() {
 }
 
 export default MainPage;
+
