@@ -1,37 +1,14 @@
-import { useEffect, useState } from "react";
-import api from "../services/axiosInstance"; // ✅ axiosInstance 사용
+import React, { useEffect, useState } from "react";
+import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 import { SearchBox } from "../components/searchBox";
 import { UserPlayListTitle } from "../components/UserPlayListTitle";
-import { UserPlayListDescription } from "../components/UserPlayListDescription";
 import { UserPlayListBox } from "../components/UserPlayLIstBox";
 import HistoryBox from "../components/HistoryBox";
-import { useUser } from "../contexts/UserContext"; // ✅ UserContext 사용
+import { useUser } from "../contexts/UserContext";
 
-// 최신 API 명세서에 맞는 Post 타입
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  autoSaved: boolean;
-  authorName: string;
-  createdAt: string;
-  updatedAt: string;
-  viewCount: number;
-  likeCount: number;
-  comments: Comment[];
-  playlist: Playlist;
-}
-
-// 필요한 하위 타입 정의
-interface Comment {
-  id: number;
-  content: string;
-  authorUsername: string;
-  createdAt: string;
-}
-
+// 타입 정의
 interface PlaylistTrack {
   trackName: string;
   artist: string;
@@ -45,30 +22,76 @@ interface Playlist {
   tracks: PlaylistTrack[];
 }
 
+interface Comment {
+  id: number;
+  content: string;
+  authorUsername: string;
+  createdAt: string;
+}
+
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  autoSaved: boolean;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
+  likeCount: number;
+  comments: Comment[];
+  playlist?: Playlist;
+}
+
+interface Page<T> {
+  content: T[];
+  pageable: { pageNumber: number; pageSize: number };
+  totalPages: number;
+  totalElements: number;
+}
+
 export default function HistoryPage() {
   const { currentUser } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<"recent" | "likes" | "comments">("recent");
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
+        setLoading(true);
+        setError(null);
         if (!currentUser?.username) {
-          console.warn("로그인 정보가 없습니다.");
+          setError("로그인이 필요합니다.");
+          setPosts([]);
+          setLoading(false);
           return;
         }
-
-        // ✅ API 인스턴스 사용 (인증 헤더 자동 추가)
-        const res = await api.get<Post[]>(`/users/${currentUser.username}/posts`);
-        
-        // ✅ API 응답을 그대로 사용 (변환 필요 없음)
-        setPosts(res.data);
+        const res = await api.get<Page<Post>>(
+          `/users/${currentUser.username}/posts`,
+          { params: { sort, page, size: 6 } }
+        );
+        if (Array.isArray(res.data.content)) {
+          setPosts(res.data.content);
+          setTotalPages(res.data.totalPages || 1);
+        } else {
+          setPosts([]);
+          setTotalPages(1);
+          setError("서버 응답 형식 오류");
+        }
       } catch (err) {
-        console.error("게시글 불러오기 실패:", err);
+        setError("게시글을 불러오는 중 오류가 발생했습니다.");
+        setPosts([]);
+        setTotalPages(1);
+      } finally {
+        setLoading(false);
       }
     };
-
     fetchPosts();
-  }, [currentUser]); // ✅ currentUser 변경 시 재요청
+  }, [currentUser, sort, page]);
 
   return (
     <div className="w-[1440px] mx-auto flex flex-col items-center">
@@ -82,15 +105,22 @@ export default function HistoryPage() {
       <div className="flex flex-row mt-[40px]">
         <div>
           <UserPlayListTitle />
-          <UserPlayListDescription />
           <UserPlayListBox
             showEditButton={true}
             username={currentUser?.username || ""}
           />
         </div>
         <div className="ml-[70px] flex-1">
-          {/* ✅ posts prop 전달 */}
-          <HistoryBox posts={posts} />
+          <HistoryBox
+            posts={posts}
+            loading={loading}
+            error={error}
+            sort={sort}
+            setSort={setSort}
+            page={page}
+            setPage={setPage}
+            totalPages={totalPages}
+          />
         </div>
       </div>
     </div>
