@@ -55,4 +55,11 @@ public class PostController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/top")
+    public ResponseEntity<List<PostResponseDto>> getTopPosts(
+            @RequestParam String sort,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(postService.getTopPosts(sort, size));
+    }
+
 }

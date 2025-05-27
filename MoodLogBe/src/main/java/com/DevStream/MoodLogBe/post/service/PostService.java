@@ -186,4 +186,20 @@ public class PostService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public List<PostResponseDto> getTopPosts(String sortBy, int size) {
+        Pageable pageable = PageRequest.of(0, size);
+        List<Post> posts;
+
+        switch (sortBy) {
+            case "likes" -> posts = postRepository.findTopNByOrderByLikeCountDesc(pageable);
+            case "comments" -> posts = postRepository.findTopNByOrderByCommentCountDesc(pageable);
+            default -> throw new IllegalArgumentException("잘못된 정렬 기준입니다: " + sortBy);
+        }
+
+        return posts.stream()
+                .map(this::toDto)
+                .toList();
+    }
+
 }

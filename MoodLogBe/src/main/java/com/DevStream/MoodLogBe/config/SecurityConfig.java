@@ -37,6 +37,8 @@ public class SecurityConfig {
                         auth
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/users/*/posts").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/users/*/playlists").permitAll()  // 🔥 추가!
+                                .requestMatchers(HttpMethod.GET, "/api/playlists").permitAll()
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
