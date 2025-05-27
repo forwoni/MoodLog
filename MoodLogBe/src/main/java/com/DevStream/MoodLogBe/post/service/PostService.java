@@ -37,12 +37,19 @@ public class PostService {
     private final PlaylistRepository playlistRepository;
     private final TrackRepository trackRepository;
 
+    /**
+     * 게시글 생성
+     * - 사용자 인증 검증
+     * - 게시글 내용으로 감정 분석 후 플레이리스트/트랙 자동 생성
+     */
     @Transactional
     public void create(PostRequestDto dto, User user) {
         if (user == null) throw new IllegalArgumentException("인증된 사용자 없음");
 
+        // 1) 감정 분석 서비스 호출
         EmotionResponse emotionResponse = emotionAnalysisService.analyzeEmotion(dto.content());
 
+        // 2) 분석 결과를 기반으로 트랙 생성
         List<Track> tracks = emotionResponse.getTracks().stream()
                 .map(dtoTrack -> {
                     Track track = new Track();
@@ -52,15 +59,17 @@ public class PostService {
                     return track;
                 }).toList();
 
+        // 3) 플레이리스트 생성 및 트랙 연결
         Playlist playlist = new Playlist();
         playlist.setName(dto.title() + "의 플레이리스트");
         playlist.setDescription("자동 생성된 플레이리스트입니다.");
         playlist.setTracks(new ArrayList<>()); // 비어있는 트랙 리스트
 
+        // 트랙과 플레이리스트 연결
         tracks.forEach(track -> track.setPlaylist(playlist));
-
         playlist.setTracks(tracks);
 
+        // 4) 게시글 엔티티 생성
         Post post = new Post(
                 null,
                 dto.title(),
@@ -73,13 +82,12 @@ public class PostService {
                 new ArrayList<>(),
                 new ArrayList<>(),
                 0,
-                null //
+                null
         );
 
+        // 5) 관계 설정 및 저장
         postRepository.save(post);
-
         playlist.setPost(post);
-
         post.setPlaylist(playlist);
 
         playlistRepository.save(playlist);
@@ -88,12 +96,19 @@ public class PostService {
         postRepository.save(post);
     }
 
+
+    /**
+     * 모든 게시글 조회
+     */
     public List<PostResponseDto> getAll() {
         return postRepository.findAll().stream()
                 .map(this::toDto)
                 .toList();
     }
 
+    /**
+     * 게시글 단건 조회 (조회수 증가 포함)
+     */
     public PostResponseDto getById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("게시글 없음"));
@@ -103,6 +118,10 @@ public class PostService {
         return toDto(post);
     }
 
+    /**
+     * 게시글 수정
+     * - 작성자만 수정 가능
+     */
     @Transactional
     public void update(Long id, PostRequestDto dto, User user) {
         Post post = postRepository.findById(id)
@@ -114,6 +133,10 @@ public class PostService {
         post.update(dto.title(), dto.content(), dto.autoSaved());
     }
 
+    /**
+     * 게시글 삭제
+     * - 작성자만 삭제 가능
+     */
     public void delete(Long id, User user) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("게시글 없음"));
@@ -124,6 +147,9 @@ public class PostService {
         postRepository.delete(post);
     }
 
+    /**
+     * 특정 사용자 게시글 조회 (정렬/페이징)
+     */
     @Transactional(readOnly = true)
     public Page<PostResponseDto> getPostsByUsername(String username, String sortBy, Pageable pageable) {
         User user = userRepository.findByUsername(username)
@@ -142,7 +168,8 @@ public class PostService {
     }
 
     /**
-     * Post -> PostResponseDto로 변환 (플레이리스트 정보까지 포함!)
+     * Post 엔티티 -> PostResponseDto로 변환
+     * - 댓글 및 플레이리스트 정보 포함
      */
     public PostResponseDto toDto(Post post) {
         // 댓글 변환
@@ -155,7 +182,7 @@ public class PostService {
                 ))
                 .toList();
 
-        // ✅ 플레이리스트가 있으면 변환
+        // 플레이리스트가 있으면 변환
         PlaylistResponseDto playlistDto = null;
         if (post.getPlaylist() != null) {
             playlistDto = new PlaylistResponseDto(
@@ -186,6 +213,10 @@ public class PostService {
         );
     }
 
+    /**
+     * 상위 N개의 게시글 조회
+     * - 좋아요 or 댓글 순 정렬
+     */
     @Transactional(readOnly = true)
     public List<PostResponseDto> getTopPosts(String sortBy, int size) {
         Pageable pageable = PageRequest.of(0, size);
