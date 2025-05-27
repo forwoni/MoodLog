@@ -11,7 +11,7 @@ import MainPage from "./pages/MainPage";
 import MyPage from "./pages/MyPage";
 import PopularPostsPage from "./pages/PopularPostsPage";
 import PostDetail from "./pages/PostDetail";
-// import OtherUserHistoryPage from "./pages/OtherUserHistroyPage";
+import OtherUserHistoryPage from "./pages/OtherUserHistroyPage";
 import UserPostDetailPage from "./pages/UserPostDetailPage";
 import FollowManagementPage from "./pages/FollowManagementPage";
 import { UserProvider } from "./contexts/UserContext"; 
@@ -31,7 +31,7 @@ function App() {
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/popular" element={<PopularPostsPage />} />
           <Route path="/post/:id" element={<PostDetail />} />
-          {/* <Route path="/otheruserhistory" element={<OtherUserHistoryPage />} /> */}
+          <Route path="/user/:username/posts" element={<OtherUserHistoryPage />} />
           <Route path="/userpostdetail/:id" element={<UserPostDetailPage />} />
           <Route path="/followmanagement" element={<FollowManagementPage />} />
         </Routes>
