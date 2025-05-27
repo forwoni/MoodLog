@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/moodlog?serverTimezone=UTC
+    username: root
+    password: 1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+server:
+  port: 8081
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: TRACE
+    com.DevStream.MoodLogBe: DEBUG
+spotify:
+  client-id: 92f1b384956f457e84801d660b411f01
+  client-secret: d4d5912b4edb48f5b0d1924f583b65da
+jwt:
+  secret: aVeryLongRandomSecretKeyThatIsAtLeast32Chars!!   # HS256 서명 키 (외부에서 관리)
+  access-token-expiry: 900000                           # Access Token 만료시간 (밀리초) = 15분
+  refresh-token-expiry: 604800000                       # Refresh Token 만료시간 (밀리초) = 7일
