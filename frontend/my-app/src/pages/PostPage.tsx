@@ -1,25 +1,126 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../services/axiosInstance";
 import logo from "../assets/moodlog_logo_transparent.png";
 import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
+import { AxiosError } from "axios";
+
+// 서버 에러 응답 타입 정의
+interface ErrorResponse {
+  message?: string;
+  [key: string]: unknown;
+}
+
+// 타입 가드 함수
+function isAxiosError(error: unknown): error is AxiosError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "isAxiosError" in error &&
+    (error as Record<string, unknown>).isAxiosError === true
+  );
+}
+
+// 서버 응답이 ErrorResponse 타입인지 확인
+function isErrorResponse(data: unknown): data is ErrorResponse {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "message" in data
+  );
+}
+
+// 임시글/게시글 타입
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  autoSaved: boolean;
+  authorUsername: string;
+}
 
 export default function PostPage() {
-  const [font, setFont] = useState("글씨체 1");
+  const [font, setFont] = useState("Arial");
   const [fontSize, setFontSize] = useState(16);
   const [align, setAlign] = useState("left");
   const [bold, setBold] = useState(false);
   const [italic, setItalic] = useState(false);
   const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [content, setContent] = useState("");
+  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
-
   const navigate = useNavigate();
 
+  // 1. 최신 임시글 불러오기 및 이전 임시글 삭제
+  useEffect(() => {
+    const loadMyLatestDraft = async () => {
+      try {
+        const { data } = await api.get<Post[]>("/posts");
+        const myDrafts = data
+          .filter(post => post.autoSaved)
+          .sort((a, b) => b.id - a.id);
+
+        if (myDrafts.length > 0) {
+          const latestDraft = myDrafts[0];
+          setTitle(latestDraft.title);
+          setContent(latestDraft.content);
+          if (editorRef.current) {
+            editorRef.current.innerHTML = latestDraft.content;
+          }
+          setCurrentDraftId(latestDraft.id);
+
+          // 이전 임시글 삭제
+          await Promise.all(
+            myDrafts.slice(1).map(draft =>
+              api.delete(`/posts/${draft.id}`)
+            )
+          );
+        }
+      } catch (error) {
+        console.error("임시 저장글 불러오기 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadMyLatestDraft();
+  }, []);
+
+  // 2. 자동 저장 (5초마다)
+  useEffect(() => {
+    const autoSave = async () => {
+      if (!title && !content) return;
+
+      try {
+        const payload = {
+          title: title || "임시 저장 제목",
+          content: content || " ",
+          autoSaved: true
+        };
+
+        if (currentDraftId) {
+          await api.put(`/posts/${currentDraftId}`, payload);
+        } else {
+          const response = await api.post("/posts", payload);
+          setCurrentDraftId(response.data.id);
+        }
+      } catch (error) {
+        console.error("자동 저장 실패:", error);
+      }
+    };
+
+    const interval = setInterval(autoSave, 5000);
+    return () => clearInterval(interval);
+  }, [title, content, currentDraftId]);
+
+  // 에디터 selection 저장/복원
   const saveSelection = () => {
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
+    if (selection?.rangeCount) {
       savedSelection.current = selection.getRangeAt(0);
     }
   };
@@ -33,6 +134,7 @@ export default function PostPage() {
     }
   };
 
+  // 에디터 명령 실행
   const handleCommand = (command: string, value?: string) => {
     saveSelection();
     document.execCommand(command, false, value);
@@ -41,6 +143,7 @@ export default function PostPage() {
     setItalic(document.queryCommandState("italic"));
   };
 
+  // 툴바 핸들러
   const handleFontChange = (font: string) => {
     saveSelection();
     setFont(font);
@@ -69,21 +172,64 @@ export default function PostPage() {
     handleCommand(`justify${align.charAt(0).toUpperCase() + align.slice(1)}`);
   };
 
+  // 본문 입력 핸들러
   const handleBodyInput = () => {
-    setBody(editorRef.current?.innerHTML || "");
+    setContent(editorRef.current?.innerHTML || "");
+  };
+
+  // 3. 게시물 최종 제출 (임시글이면 autoSaved: false로 전환)
+  const handlePublish = async () => {
+    try {
+      if (!title.trim()) {
+        alert("제목을 입력해주세요");
+        return;
+      }
+
+      if (currentDraftId) {
+        await api.put(`/posts/${currentDraftId}`, {
+          title,
+          content,
+          autoSaved: false
+        });
+      } else {
+        await api.post("/posts", {
+          title,
+          content,
+          autoSaved: false
+        });
+      }
+
+      navigate("/history");
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response) {
+        console.error("게시 실패:", error.response.data);
+        const responseData = error.response.data;
+        if (isErrorResponse(responseData)) {
+          alert(responseData.message || "게시에 실패했습니다.");
+        } else {
+          alert(JSON.stringify(responseData) || "게시에 실패했습니다.");
+        }
+      } else if (error instanceof Error) {
+        console.error("게시 실패:", error.message);
+        alert(error.message);
+      } else {
+        console.error("게시 실패:", error);
+        alert("게시에 실패했습니다.");
+      }
+    }
   };
 
   const showPlaceholder =
-    (!body || body === "<br>") &&
+    (!content || content === "<br>") &&
     (!editorRef.current || editorRef.current.innerText.trim() === "");
 
-  const handleSubmit = () => {
-    navigate("/history");
-  };
+  if (isLoading) {
+    return <div className="text-center py-8">불러오는 중...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-white">
-      {/* ✅ 왼쪽 정렬된 로고 */}
+      {/* 헤더 */}
       <div className="w-full bg-white py-4 px-10 shadow-md flex justify-start items-center">
         <img
           src={logo}
@@ -130,7 +276,7 @@ export default function PostPage() {
           </button>
           <button
             className="ml-auto px-4 py-2 bg-black text-white rounded"
-            onClick={handleSubmit}
+            onClick={handlePublish}
           >
             게시하기
           </button>
