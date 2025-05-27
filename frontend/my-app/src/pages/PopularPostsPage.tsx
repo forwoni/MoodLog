@@ -2,21 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/moodlog_logo_transparent.png';
 import { Bell, User, X } from 'lucide-react';
-
-const dummyPosts = [
-  { id: 1, title: '제목', likes: 27, comments: 2 },
-  { id: 2, title: '제목', likes: 12, comments: 0 },
-  { id: 3, title: '제목', likes: 33, comments: 0 },
-  { id: 4, title: '제목', likes: 10, comments: 0 },
-  { id: 5, title: '제목', likes: 23, comments: 0 },
-  { id: 6, title: '제목', likes: 13, comments: 0 },
-  { id: 7, title: '제목', likes: 7, comments: 1 },
-  { id: 8, title: '제목', likes: 17, comments: 3 },
-  { id: 9, title: '제목', likes: 21, comments: 4 },
-  { id: 10, title: '제목', likes: 14, comments: 2 },
-  { id: 11, title: '제목', likes: 5, comments: 1 },
-  { id: 12, title: '제목', likes: 19, comments: 0 },
-];
+import axios from 'axios';
 
 const sortOptions = [
   { label: '최신순', value: 'latest' },
@@ -25,6 +11,7 @@ const sortOptions = [
 ];
 
 function PopularPostsPage() {
+  const [posts, setPosts] = useState([]);
   const [sortBy, setSortBy] = useState('latest');
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -50,10 +37,22 @@ function PopularPostsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const sortedPosts = [...dummyPosts].sort((a, b) => {
-    if (sortBy === 'likes') return b.likes - a.likes;
-    if (sortBy === 'comments') return b.comments - a.comments;
-    return b.id - a.id;
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await axios.get('/api/posts');
+        setPosts(response.data);
+      } catch (error) {
+        console.error('인기 게시글 불러오기 실패:', error);
+      }
+    };
+    fetchPosts();
+  }, []);
+
+  const sortedPosts = [...posts].sort((a, b) => {
+    if (sortBy === 'likes') return b.likeCount - a.likeCount;
+    if (sortBy === 'comments') return b.comments.length - a.comments.length;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   const indexOfLastPost = currentPage * postsPerPage;
@@ -63,7 +62,6 @@ function PopularPostsPage() {
 
   return (
     <div className="min-h-screen bg-white px-[12%] pt-6 pb-24 relative text-[2.2rem]">
-      {/* 상단 네비게이션 */}
       <div className="flex justify-between items-center mb-6 px-4">
         <img
           src={logo}
@@ -77,7 +75,6 @@ function PopularPostsPage() {
         </div>
       </div>
 
-      {/* 알림창 */}
       {showNotifications && (
         <div
           ref={notifRef}
@@ -93,7 +90,6 @@ function PopularPostsPage() {
         </div>
       )}
 
-      {/* 프로필 메뉴 */}
       {showProfileMenu && (
         <div
           ref={profileRef}
@@ -118,7 +114,6 @@ function PopularPostsPage() {
         </div>
       )}
 
-      {/* 상단 인기글 헤더 영역 */}
       <div className="flex justify-between items-center bg-[#f2f0f1] rounded-md px-10 py-10 mb-14 border">
         <div className="text-3xl font-semibold text-black flex items-center gap-2">
           인기 글
@@ -151,7 +146,6 @@ function PopularPostsPage() {
         </div>
       </div>
 
-      {/* 게시글 리스트 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-20">
         {currentPosts.map(post => (
           <div
@@ -160,14 +154,13 @@ function PopularPostsPage() {
           >
             <h3 className="text-3xl font-bold mb-8">{post.title}</h3>
             <div className="text-xl text-gray-700 flex gap-10">
-              <span>♡ {post.likes}</span>
-              {post.comments > 0 && <span>💬 {post.comments}</span>}
+              <span>♡ {post.likeCount}</span>
+              {post.comments.length > 0 && <span>💬 {post.comments.length}</span>}
             </div>
           </div>
         ))}
       </div>
 
-      {/* 페이지네이션 */}
       <div className="flex justify-start mt-16 gap-4 text-xl text-gray-700">
         {[...Array(totalPages)].map((_, idx) => (
           <button
