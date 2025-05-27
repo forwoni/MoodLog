@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import defaultProfile from '../assets/defaultProfile.png';
+
+interface UpdateUserInfoBody {
+  currentPassword?: string;
+  newUsername?: string;
+  newPassword?: string;
+}
 
 function MyPage() {
   const navigate = useNavigate();
@@ -29,34 +35,26 @@ function MyPage() {
   }, []);
 
   // 사용자 정보 가져오기
+  const fetchUserInfo = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await axios.get('/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNickname(res.data.username);
+      setEmail(res.data.email);
+      if (res.data.profileImage) setProfileImage(res.data.profileImage);
+    } catch (err) {
+      console.error('사용자 정보 조회 실패:', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        const res = await axios.get('/api/users/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setNickname(res.data.username);
-        setEmail(res.data.email);
-      } catch (err) {
-        console.error('사용자 정보 조회 실패:', err);
-      }
-    };
     fetchUserInfo();
   }, []);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result as string);
-        setScale(1);
-        setTranslate({ x: 0, y: 0 });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // 이미지 변경은 비활성화 (UI만 남김)
+  const handleImageChange = (_e: React.ChangeEvent<HTMLInputElement>) => {};
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -83,20 +81,51 @@ function MyPage() {
 
   const handleConfirm = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      await axios.put('/api/users/me', {
-        currentPassword,
-        newUsername: nickname,
-        newPassword: password,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = localStorage.getItem('access_token');
+      // 빈 값은 body에서 제외
+      const body: UpdateUserInfoBody = {};
+      if (currentPassword) body.currentPassword = currentPassword;
+      if (nickname) body.newUsername = nickname;
+      if (password) body.newPassword = password;
+
+      // 필수값 체크
+      if (!body.currentPassword) {
+        alert("현재 비밀번호를 입력하세요.");
+        return;
+      }
+      if (!body.newUsername && !body.newPassword) {
+        alert("변경할 닉네임이나 새 비밀번호를 입력하세요.");
+        return;
+      }
+
+      await axios.put('/api/users/me', body, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
+
+      // 최신 정보 다시 조회
+      await fetchUserInfo();
+
       alert('정보가 성공적으로 수정되었습니다.');
       setShowPopup(false);
-      navigate(from || '/main');
-    } catch (err) {
-      console.error('정보 수정 실패:', err);
-      alert('정보 수정에 실패했습니다.');
+      setPassword('');
+      setCurrentPassword('');
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "isAxiosError" in err &&
+        (err as AxiosError).isAxiosError
+      ) {
+        const axiosError = err as AxiosError<{ message?: string }>;
+        alert('정보 수정 실패: ' + (axiosError.response?.data?.message || axiosError.message));
+      } else if (err instanceof Error) {
+        alert('정보 수정 실패: ' + err.message);
+      } else {
+        alert('정보 수정에 실패했습니다.');
+      }
     }
   };
 
@@ -107,7 +136,7 @@ function MyPage() {
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-white">
-      <div className="w-[420px] h-[580px] border rounded-md shadow-md flex flex-col px-6 py-4 justify-between">
+      <div className="w-[420px] h-[580px] border rounded-md shadow-md flex flex-col px-6 py-4 justify-between relative">
         <header className="border-b pb-3">
           <h1 className="text-2xl font-bold">마이 페이지</h1>
         </header>
@@ -128,21 +157,15 @@ function MyPage() {
                 style={{ transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)` }}
               />
             </div>
-            <button
-              className="text-sm border px-4 py-1 rounded mt-2"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              사진 변경
-            </button>
             <input
               type="file"
               accept="image/*"
               ref={fileInputRef}
               className="hidden"
               onChange={handleImageChange}
+              disabled
             />
           </div>
-
           <div className="w-1/2 space-y-3">
             <div>
               <label className="font-bold block mb-1">닉네임</label>
