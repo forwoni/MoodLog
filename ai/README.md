@@ -37,25 +37,24 @@ ai/
 ├── issues/                          # 작업 중 이슈 문서 정리
 ├── modules/                         # 감정 분석, Spotify 추천 로직 모듈
 │   ├── emotion\_analyzer.py          # 감정 분석 (rule-based or 모델 기반)
+│   ├── emotion\_analyzer_.py          # 감정 분석 (rule-based or 모델 기반)
 │   └── spotify\_helper.py            # 감정 → 키워드 매핑 및 Spotify API 호출
+│   └── info.py
+│   └── main.py                        # API 기본 틀
+│   └── Issue3_2_test_main.py            # 감정분석 & 곡 추천 API
 ├── venv/                            # 가상 환경 디렉토리 (로컬 실행용, Git 추적 제외)
 ├── .gitignore                       # **pycache** 및 venv 등 Git 추적 제외 설정
 ├── .gitignore\_backup\_from\_root      # 기존 루트에서 이동한 백업 gitignore
 ├── README.md                        # 본 파일
 ├── emotion\_api\_spec.md              # 감정 분석/추천 API 명세서
-├── main.py                          # FastAPI 서버 진입점
 
 ````
 
 ---
 
-## 🔗 주요 API 엔드포인트
+## 🔗 API 명세서
 
-| 메서드 | 경로                  | 설명                                      |
-|--------|-----------------------|-------------------------------------------|
-| POST   | `/analyze`            | 텍스트 감정 분석 결과 반환                |
-| POST   | `/recommend`          | 감정 입력 기반 Spotify 음악 추천         |
-| POST   | `/analyze_and_recommend` | 텍스트 입력 → 감정 분석 → 곡 추천 통합 |
+https://github.com/forwoni/MoodLog/blob/develop/ai/emotion_api_spec.md
 
 ---
 
@@ -100,15 +99,5 @@ pip install -r requirements.txt
 ```bash
 uvicorn main:app --reload
 ```
-
----
-
-## 👥 담당자
-
-| 이름  | 소속          | 역할                        |
-| --- | ----------- | ------------------------- |
-| 이신비 | 컴퓨터공학전공 2학년 | AI 개발 / 감정 분석 및 추천 API 설계 |
-
----
 
 ````
