@@ -244,14 +244,60 @@
   }
 ]
 ```
+---
+### 📄 Top 게시글 조회
 
+* **URL:** `GET /api/posts/top`
+* **인증 필요:** ❌
+* **Query Parameters:**
+
+  * `sort`: `(likes | comments)` (필수)
+  * `size`: 몇 개의 게시글을 가져올지 (기본값: 10으로 세팅) (선택)
+* **Response:** `200 OK`
+```json
+[
+  {
+    "id": 1,
+    "title": "오늘의 기분",
+    "content": "조금 우울하지만 괜찮아질 거야",
+    "autoSaved": false,
+    "authorName": "woni",
+    "createdAt": "2025-05-27T15:16:04.8162",
+    "updatedAt": "2025-05-27T15:16:04.830484",
+    "viewCount": 0,
+    "likeCount": 27,
+    "comments": [
+      {
+        "id": 1,
+        "content": "좋은 글이에요!",
+        "authorUsername": "댓글러",
+        "createdAt": "2025-05-27T15:20:00"
+      }
+    ],
+    "playlist": {
+      "id": 1,
+      "name": "오늘의 기분의 플레이리스트",
+      "description": "자동 생성된 플레이리스트입니다.",
+      "tracks": [
+        {
+          "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
+          "artist": "ILLENIUM",
+          "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
+        }
+      ]
+    }
+  },
+  ...
+]
+
+```
 ---
 
 ### 🔍 게시글 상세 조회
 
 * **URL:** `GET /api/posts/{id}`
-* **인증 필요:** ✅
-* **Response:** `200 OK` (위와 동일 구조이나 리스트 반환이 아님)
+* **인증 필요:** ❌
+* **Response:** `200 OK`
 ```json
   {
   "id": 6,
