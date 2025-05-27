@@ -74,10 +74,7 @@ export default function HistoryPage() {
     <div className="w-[1440px] mx-auto flex flex-col items-center">
       <HeaderBox />
       <div className="w-[1440px] mx-auto mt-[102px]">
-        <UserInfoBox
-          userName={currentUser?.username || "사용자 이름"}
-          userDescription="작성한 게시글을 확인해 보세요"
-        />
+        <UserInfoBox />
       </div>
       <div className="mt-[23px] flex justify-center">
         <SearchBox />

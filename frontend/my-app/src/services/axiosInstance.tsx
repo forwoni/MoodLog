@@ -37,12 +37,13 @@ api.interceptors.response.use(
           window.location.href = "/login";
           return Promise.reject(error);
         }
-        const res = await axios.post("/api/auth/refresh", {
-          refreshToken,
-        });
+        const res = await axios.post("/api/auth/refresh", { refreshToken });
         const { accessToken, refreshToken: newRefreshToken } = res.data;
         setTokens(accessToken, newRefreshToken);
-
+        
+        // 토큰 갱신 이벤트 발생
+        window.dispatchEvent(new Event("tokenRefreshed"));
+        
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return api(originalRequest);
       } catch (refreshError) {

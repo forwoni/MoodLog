@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import PostCard from "./PostCard";
 import { useUser } from "../contexts/UserContext";
 
@@ -44,7 +44,7 @@ interface HistoryBoxProps {
 
 const HistoryBox: React.FC<HistoryBoxProps> = ({ posts }) => {
   const { currentUser } = useUser();
-  const [allPosts, setAllPosts] = useState<Post[]>(posts || []);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [sort, setSort] = useState<"recent" | "likes" | "comments">("recent");
   const [loading, setLoading] = useState(true);
@@ -52,12 +52,58 @@ const HistoryBox: React.FC<HistoryBoxProps> = ({ posts }) => {
 
   // posts prop이 바뀌면 상태 동기화
   useEffect(() => {
-    if (posts) setAllPosts(posts);
+    if (Array.isArray(posts)) {
+      setAllPosts(posts);
+      setLoading(false);
+    }
   }, [posts]);
+
+  // 서버에서 내 게시글 목록 불러오기
+  const fetchPosts = async () => {
+    if (!currentUser?.username) {
+      setError("로그인이 필요합니다");
+      setAllPosts([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const { data } = await axios.get<Post[]>(
+        `/api/users/${currentUser.username}/posts`,
+        { params: { sort: `${sort},desc` } }
+      );
+      if (Array.isArray(data)) {
+        setAllPosts(data);
+      } else {
+        setAllPosts([]);
+        setError("서버 데이터 형식 오류");
+      }
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "게시글 조회 실패"
+      );
+      setAllPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!posts) {
+      setCurrentPage(0);
+      fetchPosts();
+    }
+    // eslint-disable-next-line
+  }, [sort, currentUser?.username]);
 
   // 정렬 및 페이지네이션
   const paginatedPosts = useMemo(() => {
-    const sorted = [...allPosts].sort((a, b) => {
+    const safePosts = Array.isArray(allPosts) ? allPosts : [];
+    const sorted = [...safePosts].sort((a, b) => {
       if (sort === "recent") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       } else if (sort === "likes") {
@@ -72,39 +118,6 @@ const HistoryBox: React.FC<HistoryBoxProps> = ({ posts }) => {
     }
     return pages;
   }, [allPosts, sort]);
-
-  // 서버에서 내 게시글 목록 불러오기
-  const fetchPosts = async () => {
-    if (!currentUser?.username) {
-      setError("로그인이 필요합니다");
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      const { data } = await axios.get<Post[]>(
-        `/api/users/${currentUser.username}/posts`,
-        { params: { sort: `${sort},desc` } }
-      );
-      setAllPosts(data);
-      setError(null);
-    } catch (_) {
-      setError("게시글 조회 실패");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!posts) {
-      setCurrentPage(0);
-      fetchPosts();
-    }
-  }, [sort, currentUser]);
-
-  useEffect(() => {
-    if (posts) setLoading(false);
-  }, [posts]);
 
   const currentPosts = paginatedPosts[currentPage] || [];
   const totalPages = paginatedPosts.length;

@@ -1,34 +1,67 @@
-// src/contexts/UserContext.tsx
+import React, { createContext, useContext, useState, useEffect } from "react";
+import api from "../services/axiosInstance";
 
-import React, { createContext, useContext, useState } from "react";
-
-// 사용자 타입 정의 (필요에 따라 확장 가능)
 interface User {
   username: string;
-  // 다른 정보들 예: email, id 등
+  email: string;
+  nickname: string;
 }
 
-// context의 값 타입 정의
 interface UserContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
+  logout: () => void;
 }
 
-// context 생성
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Provider 컴포넌트
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUser = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        setCurrentUser(null);
+        setIsLoading(false);
+        return;
+      }
+      const res = await api.get("/users/me");
+      setCurrentUser(res.data);
+    } catch (_) {
+      setCurrentUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+
+    const handleTokenRefreshed = () => {
+      fetchUser();
+    };
+
+    window.addEventListener("tokenRefreshed", handleTokenRefreshed);
+    return () => {
+      window.removeEventListener("tokenRefreshed", handleTokenRefreshed);
+    };
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    setCurrentUser(null);
+  };
 
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser }}>
-      {children}
+    <UserContext.Provider value={{ currentUser, setCurrentUser, logout }}>
+      {!isLoading && children}
     </UserContext.Provider>
   );
 };
 
-// context를 쉽게 사용하기 위한 커스텀 훅
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
