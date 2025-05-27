@@ -1,7 +1,7 @@
 import React from "react";
-import PostCard from "./PostCard";
+import OtherUserPostCard from "./OtherUserPostCard";
 
-// 타입 정의 (HistoryBox와 동일)
+// 타입 정의 (Post 등)
 interface PlaylistTrack {
   trackName: string;
   artist: string;
@@ -23,7 +23,6 @@ interface Post {
   id: number;
   title: string;
   content: string;
-  autoSaved: boolean;
   authorName: string;
   createdAt: string;
   updatedAt: string;
@@ -32,7 +31,6 @@ interface Post {
   comments: Comment[];
   playlist?: Playlist;
 }
-
 interface OtherUserHistoryBoxProps {
   posts: Post[];
   loading: boolean;
@@ -42,7 +40,6 @@ interface OtherUserHistoryBoxProps {
   page: number;
   setPage: (page: number) => void;
   totalPages: number;
-  username: string;
 }
 
 const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
@@ -54,12 +51,9 @@ const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
   page,
   setPage,
   totalPages,
-  username,
 }) => {
   return (
     <div className="flex flex-col w-[800px] min-h-[400px] items-center gap-5 pt-10 pb-5 px-0 relative bg-white rounded-lg shadow">
-      {/* 유저 이름 표시 */}
-      <div className="text-2xl font-bold mb-2 text-blue-600">@{username}님의 게시글</div>
       {/* 정렬 선택 */}
       <div className="flex w-[570px] items-center justify-end gap-2 relative">
         <select
@@ -84,11 +78,7 @@ const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
           <div className="text-gray-400 text-lg">게시물 없음</div>
         ) : (
           posts.map((post) => (
-            <PostCard
-              key={post.id}
-              {...post}
-              // isMyPost는 필요 없다면 생략
-            />
+            <OtherUserPostCard key={post.id} {...post} />
           ))
         )}
       </div>

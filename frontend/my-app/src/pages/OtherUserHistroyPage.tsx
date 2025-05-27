@@ -1,12 +1,11 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/axiosInstance";
-import HistoryBox from "../components/HistoryBox";
+import { HeaderBox } from "../layouts/headerBox";
 import OtherUserInfoBox from "../components/OtherUserInfoBox";
-import { HeaderBox } from "../layouts/headerBox"; // HeaderBox import 경로는 실제 위치에 맞게
-
-// 타입 정의들 (생략 가능, 기존 코드와 동일하게 유지)
-
+import OtherUserHistoryBox from "../components/OtherUserHistoryBox";
+import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
 interface PlaylistTrack {
   trackName: string;
   artist: string;
@@ -28,7 +27,6 @@ interface Post {
   id: number;
   title: string;
   content: string;
-  autoSaved: boolean;
   authorName: string;
   createdAt: string;
   updatedAt: string;
@@ -42,6 +40,7 @@ interface Page<T> {
   totalPages: number;
   totalElements: number;
 }
+
 
 export default function OtherUserHistoryPage() {
   const { username } = useParams<{ username: string }>();
@@ -76,21 +75,28 @@ export default function OtherUserHistoryPage() {
   }, [username, sort, page]);
 
   return (
-    <div className="w-[1440px] mx-auto flex flex-col items-center bg-[#F1F1F1] min-h-screen">
+    <div className="w-[1440px] mx-auto flex flex-col items-center">
       <HeaderBox />
-      <div className="mt-[102px] w-full flex flex-col items-center">
+      <div className="w-[1440px] mx-auto mt-[102px]">
         <OtherUserInfoBox authorName={username || ""} />
-        <HistoryBox
-          posts={posts}
-          loading={loading}
-          error={error}
-          sort={sort}
-          setSort={setSort}
-          page={page}
-          setPage={setPage}
-          totalPages={totalPages}
-        />
+      </div>
+      <div className="flex flex-row mt-[40px]">
+        <div>
+          <OtherUserPlayListBox username={username || ""} />
+        </div>
+        <div className="ml-[100px] flex-1">
+          <OtherUserHistoryBox
+            posts={posts}
+            loading={loading}
+            error={error}
+            sort={sort}
+            setSort={setSort}
+            page={page}
+            setPage={setPage}
+            totalPages={totalPages}
+          />
+        </div>
       </div>
     </div>
-  );
+ );
 }
