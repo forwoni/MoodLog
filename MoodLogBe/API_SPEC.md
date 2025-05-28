@@ -632,12 +632,14 @@ true // 또는 false
     "id": 1,
     "followerUsername": "woni1",
     "followingUsername": "woni",
+    "followingProfileImageUrl": "https://some-url.jpg",
     "createdAt": "2025-05-28T09:30:27.51678"
   },
   {
     "id": 2,
     "followerUsername": "woni2",
     "followingUsername": "woni",
+    "followingProfileImageUrl": "https://some-url.jpg",
     "createdAt": "2025-05-28T09:30:41.321705"
   }
 ]
