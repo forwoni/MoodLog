@@ -156,7 +156,7 @@
 * **URL:** `POST /api/users/profile-image`
 * **인증 필요:** ✅
 
-* **Request: 업로드할 이미지 파일**
+* **Request: file : 업로드할 이미지 파일 (multipart/form-data)**
 
 * **Response:** `200 OK`
 
@@ -172,7 +172,7 @@
 * **URL:** `PUT /api/users/profile-image`
 * **인증 필요:** ✅
 
-* **Request: 새 업로드할 이미지 파일**
+* **Request: file : 새 업로드할 이미지 파일 (multipart/form-data)**
 
 * **Response:** `200 OK`
 
