@@ -6,5 +6,6 @@ public record FollowResponseDto(
         Long id,
         String followerUsername,
         String followingUsername,
+        String followingProfileImageUrl,
         LocalDateTime createdAt
 ) {}
