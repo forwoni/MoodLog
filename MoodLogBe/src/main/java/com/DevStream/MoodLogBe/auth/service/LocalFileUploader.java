@@ -12,7 +12,7 @@ import java.nio.file.StandardCopyOption;
 @Service
 public class LocalFileUploader {
 
-    private final Path rootPath = Paths.get("/Users/yourusername/uploads"); // 저장할 로컬 디렉토리 경로
+    private final Path rootPath = Paths.get("/Users/namhawon/uploads"); // 저장할 로컬 디렉토리 경로
 
     /**
      * 파일 업로드

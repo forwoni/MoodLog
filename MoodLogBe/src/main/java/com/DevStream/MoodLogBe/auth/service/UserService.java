@@ -66,8 +66,13 @@ public class UserService {
     @Transactional
     public String updateProfileImage(User user, MultipartFile newFile) {
         String oldImageUrl = user.getProfileImageUrl();
+        String newImageUrl;
 
-        String newImageUrl = localFileUploader.uploadFile(newFile, "profile");
+        try {
+            newImageUrl = localFileUploader.uploadFile(newFile, "profile");
+        } catch (IOException e) {
+            throw new RuntimeException("파일 업로드 실패: " + e.getMessage(), e);
+        }
 
         user.setProfileImageUrl(newImageUrl);
         userRepository.save(user);
@@ -76,7 +81,8 @@ public class UserService {
             try {
                 localFileUploader.deleteFile(oldImageUrl);
             } catch (IOException e) {
-                throw new RuntimeException("기존 이미지 삭제 실패: " + e.getMessage());
+                // 삭제 실패해도 로깅만 하고 예외 터뜨리지 않도록
+                throw new RuntimeException("기존 파일 삭제 실패: " + e.getMessage(), e);
             }
         }
 
