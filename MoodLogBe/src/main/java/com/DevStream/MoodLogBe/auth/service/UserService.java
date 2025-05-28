@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -62,21 +64,23 @@ public class UserService {
      *  프로필 이미지 업로드
      */
     @Transactional
-    public String updateProfileImage(User user, MultipartFile file) {
-        User persistentUser = userRepository.findById(user.getId())
-                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+    public String updateProfileImage(User user, MultipartFile newFile) {
+        String oldImageUrl = user.getProfileImageUrl();
 
-        try {
-            // 파일 업로드 (파일명: userId_타임스탬프.확장자)
-            String filename = "user_" + user.getId() + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            String url = localFileUploader.uploadFile(file, filename);
+        String newImageUrl = localFileUploader.uploadFile(newFile, "profile");
 
-            // 사용자 엔티티에 이미지 URL 저장
-            persistentUser.setProfileImageUrl(url);
+        user.setProfileImageUrl(newImageUrl);
+        userRepository.save(user);
 
-            return url; // 프론트에서 이미지 표시 가능
-        } catch (Exception e) {
-            throw new RuntimeException("프로필 이미지 업로드 실패: " + e.getMessage());
+        if (oldImageUrl != null && !oldImageUrl.isBlank()) {
+            try {
+                localFileUploader.deleteFile(oldImageUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("기존 이미지 삭제 실패: " + e.getMessage());
+            }
         }
+
+        return newImageUrl;
     }
+
 }

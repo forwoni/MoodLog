@@ -38,7 +38,7 @@ public class UserController {
     }
 
     /**
-     * 프로필 이미지 업로드
+     * 프로필 이미지 업로드 (최초 업로드)
      */
     @PostMapping("/profile-image")
     public ResponseEntity<String> uploadProfileImage(@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -48,14 +48,13 @@ public class UserController {
     }
 
     /**
-     * 프로필 이미지 수정
+     * 프로필 이미지 수정 (덮어쓰기)
      */
-
-    @PutMapping("/image")
+    @PutMapping("/profile-image")
     public ResponseEntity<String> updateProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam("file") MultipartFile file) {
+            @RequestPart MultipartFile file) {
         String newImageUrl = userService.updateProfileImage(userDetails.getUser(), file);
-        return ResponseEntity.ok(newImageUrl); // 또는 다른 형태로 응답
+        return ResponseEntity.ok(newImageUrl);
     }
 }
