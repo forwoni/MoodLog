@@ -42,4 +42,9 @@ public class SocialController {
     public ResponseEntity<List<FollowResponseDto>> getFollowings(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(followService.getAllFollowings(userDetails.getUser()));
     }
+
+    @GetMapping("/followers")
+    public ResponseEntity<List<FollowResponseDto>> getFollowers(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(followService.getFollowers(userDetails.getUser()));
+    }
 }

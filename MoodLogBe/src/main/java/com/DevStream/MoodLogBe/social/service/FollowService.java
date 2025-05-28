@@ -98,4 +98,14 @@ public class FollowService {
                 .map(followMapper::toDto)
                 .toList();
     }
+
+    /**
+     * 사용자를 팔로우하는 대상 목록 반환
+     */
+    @Transactional(readOnly = true)
+    public List<FollowResponseDto> getFollowers(User user) {
+        return followRepository.findByFollowing(user).stream()
+                .map(followMapper::toDto)
+                .toList();
+    }
 }
