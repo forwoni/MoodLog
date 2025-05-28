@@ -151,6 +151,38 @@
   * `422`: 변경할 항목이 없음 (newUsername, newPassword)
 ---
 
+### 📷 프로필 이미지 업로드
+
+* **URL:** `POST /api/users/profile-image`
+* **인증 필요:** ✅
+
+* **Request: file : 업로드할 이미지 파일 (multipart/form-data)**
+
+* **Response:** `200 OK`
+
+* **예외:**
+
+  * `400`: 파일이 없거나 형식이 올바르지 않을 때
+  * `401`: 인증 실패(토큰 없음 또는 만료)
+  * `500`: 파일 저장 오류 (예: IOException))
+---
+
+### ✏️ 프로필 이미지 수정
+
+* **URL:** `PUT /api/users/profile-image`
+* **인증 필요:** ✅
+
+* **Request: file : 새 업로드할 이미지 파일 (multipart/form-data)**
+
+* **Response:** `200 OK`
+
+* **예외:**
+
+  * `400`: 파일이 없거나 형식이 올바르지 않을 때
+  * `401`: 인증 실패(토큰 없음 또는 만료)
+  * `500`: 파일 저장 오류 (예: IOException))
+---
+
 ## 📂 Post
 
 ### 📌 게시글 작성
