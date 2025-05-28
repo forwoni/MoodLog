@@ -26,23 +26,19 @@ public class SpotifyTokenService {
     private String clientSecret;
 
     public String getAccessToken() {
-        String credentials = Base64.getEncoder()
-                .encodeToString((clientId + ":" + clientSecret).getBytes());
+        String credentials = Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setBasicAuth(clientId, clientSecret);
+        headers.set("Authorization", "Basic " + credentials);
 
-        MultiValueMap<String,String> body = new LinkedMultiValueMap<>();
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "client_credentials");
 
-        HttpEntity<MultiValueMap<String,String>> req = new HttpEntity<>(body, headers);
-        try {
-            ResponseEntity<SpotifyTokenResponse> res = restTemplate
-                    .postForEntity("https://accounts.spotify.com/api/token", req, SpotifyTokenResponse.class);
-            return res.getBody().getAccess_token();
-        } catch (HttpClientErrorException e) {
-            throw new RuntimeException("Spotify 인증 실패: " + e.getStatusCode(), e);
-        }
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+        ResponseEntity<SpotifyTokenResponse> response = restTemplate
+                .postForEntity("https://accounts.spotify.com/api/token", request, SpotifyTokenResponse.class);
+
+        return response.getBody().getAccess_token();
     }
 }
