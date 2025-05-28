@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from emotion_analyzer import analyze_long_text
-from spotify_helper import emotion_to_keyword, get_spotify_token, search_spotify_tracks
+from spotify_helper import emotion_to_keyword, get_spotify_token, recommend_emotion_playlist_tracks
 
 app = FastAPI()
 
@@ -19,9 +19,8 @@ def analyze(input: TextInput):
 @app.post("/recommend")
 def recommend(input: TextInput):
     emotion = analyze_long_text(input.text)
-    keyword = emotion_to_keyword.get(emotion, "chill")
     token = get_spotify_token()
-    tracks = search_spotify_tracks(keyword, token)
+    tracks = recommend_emotion_playlist_tracks(emotion, token)
     return {
         "emotion": emotion,
         "tracks": tracks
