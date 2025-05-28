@@ -13,7 +13,7 @@ public class EmotionResponse {
     public static class Track{
         private String track_name;
         private String artist;
-        private String preview_url;
+        private String album_image;
         private String spotify_url;
     }
 }
