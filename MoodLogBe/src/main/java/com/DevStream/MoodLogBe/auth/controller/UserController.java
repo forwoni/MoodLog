@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,5 +35,27 @@ public class UserController {
     ) {
         UserResponseDto response = userService.updateUser(userDetails.getUser(), dto);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 프로필 이미지 업로드
+     */
+    @PostMapping("/profile-image")
+    public ResponseEntity<String> uploadProfileImage(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                     @RequestPart MultipartFile file) {
+        String imageUrl = userService.updateProfileImage(userDetails.getUser(), file);
+        return ResponseEntity.ok(imageUrl);
+    }
+
+    /**
+     * 프로필 이미지 수정
+     */
+
+    @PutMapping("/image")
+    public ResponseEntity<String> updateProfileImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam("file") MultipartFile file) {
+        String newImageUrl = userService.updateProfileImage(userDetails.getUser(), file);
+        return ResponseEntity.ok(newImageUrl); // 또는 다른 형태로 응답
     }
 }

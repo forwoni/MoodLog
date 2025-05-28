@@ -8,12 +8,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LocalFileUploader localFileUploader;
 
     /**
      * 현재 로그인된 사용자 정보 조회
@@ -55,5 +57,26 @@ public class UserService {
                 persistentUser.getUsername(),
                 persistentUser.getEmail()
         );
+    }
+    /**
+     *  프로필 이미지 업로드
+     */
+    @Transactional
+    public String updateProfileImage(User user, MultipartFile file) {
+        User persistentUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+        try {
+            // 파일 업로드 (파일명: userId_타임스탬프.확장자)
+            String filename = "user_" + user.getId() + "_" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            String url = localFileUploader.uploadFile(file, filename);
+
+            // 사용자 엔티티에 이미지 URL 저장
+            persistentUser.setProfileImageUrl(url);
+
+            return url; // 프론트에서 이미지 표시 가능
+        } catch (Exception e) {
+            throw new RuntimeException("프로필 이미지 업로드 실패: " + e.getMessage());
+        }
     }
 }
