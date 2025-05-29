@@ -46,7 +46,6 @@ export default function PlayListEditor() {
             >
               {/* 썸네일 */}
               <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center mr-6 text-base text-gray-400 leading-tight text-center select-none">
-                {/* 한 줄이 안 되면 두 줄로 */}
                 <span>
                   노래<br />이미지
                 </span>
