@@ -147,7 +147,7 @@ export default function PostPage() {
         return;
       }
 
-      navigate(`/userpostdetail/${postId}`);
+      navigate(`/postdetail/${postId}`);
     } catch (error) {
       const err = error as AxiosError<{ message?: string }>;
       alert(err.response?.data?.message || "게시 실패");

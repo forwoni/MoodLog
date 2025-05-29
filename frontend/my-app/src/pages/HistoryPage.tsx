@@ -4,7 +4,7 @@ import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 import SearchBox from "../components/searchBox";
 import { UserPlayListTitle } from "../components/UserPlayListTitle";
-import { UserPlayListBox } from "../components/UserPlayLIstBox";
+import { UserPlayListBox } from "../components/UserPlayListBox"
 import HistoryBox from "../components/HistoryBox";
 import { useUser } from "../contexts/UserContext";
 
