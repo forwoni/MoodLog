@@ -1,30 +1,24 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import api from "../services/axiosInstance";
-import PostCard from "../components/PostCard";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-// 타입 정의 (API 명세서 기반)
 interface PlaylistTrack {
   trackName: string;
   artist: string;
   spotifyUrl: string;
 }
-
 interface Playlist {
   id: number;
   name: string;
   description: string;
   tracks: PlaylistTrack[];
 }
-
 interface Comment {
   id: number;
   content: string;
   authorUsername: string;
   createdAt: string;
 }
-
-interface Post {
+interface PostCardProps {
   id: number;
   title: string;
   content: string;
@@ -36,107 +30,97 @@ interface Post {
   likeCount: number;
   comments: Comment[];
   playlist?: Playlist;
+  isMyPost?: boolean;
 }
 
-interface Page<T> {
-  content: T[];
-  pageable: { pageNumber: number; pageSize: number };
-  totalPages: number;
-  totalElements: number;
-}
+const PostCard: React.FC<PostCardProps> = ({
+  id,
+  title,
+  content,
+  authorName,
+  createdAt,
+  viewCount,
+  likeCount,
+  comments,
+  playlist,
+  autoSaved,
+  isMyPost,
+}) => {
+  const navigate = useNavigate();
 
-export default function OtherUserHistoryPage() {
-  const { username } = useParams<{ username: string }>();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [page, setPage] = useState(0);
-  const [sort, setSort] = useState<"recent" | "likes" | "comments">("recent");
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // 본문 미리보기(100자)
+  const getPreview = (html: string) => {
+    const plain = html.replace(/<[^>]+>/g, "");
+    return plain.length > 100 ? plain.slice(0, 100) + "..." : plain;
+  };
 
-  useEffect(() => {
-    if (!username) return;
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await api.get<Page<Post>>(
-          `/users/${username}/posts`,
-          { params: { sort, page, size: 6 } }
-        );
-        if (Array.isArray(res.data.content)) {
-          setPosts(res.data.content);
-          setTotalPages(res.data.totalPages || 1);
-        } else {
-          setPosts([]);
-          setTotalPages(1);
-          setError("서버 응답 형식 오류");
-        }
-      } catch (err) {
-        setError("게시글을 불러오는 중 오류가 발생했습니다.");
-        setPosts([]);
-        setTotalPages(1);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
-  }, [username, sort, page]);
+  // 더블클릭 시 상세 페이지 이동
+  const handleDoubleClick = () => {
+    navigate(`/userpostdetail/${id}`);
+  };
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col items-center py-10">
-      <h1 className="text-3xl font-bold mb-6">
-        <span className="text-blue-600">@{username}</span>님의 게시글
-      </h1>
-      <div className="flex w-full items-center justify-end gap-2 mb-6">
-        <select
-          value={sort}
-          onChange={(e) => {
-            setSort(e.target.value as typeof sort);
-            setPage(0);
-          }}
-          className="w-[123px] h-[30px] rounded-md border border-black/30 pl-2 pr-6"
-        >
-          <option value="recent">최신순</option>
-          <option value="likes">좋아요순</option>
-          <option value="comments">댓글순</option>
-        </select>
+    <div 
+      className="border rounded-lg shadow-md bg-white p-6 mb-6 cursor-pointer hover:shadow-lg transition"
+      onDoubleClick={handleDoubleClick}
+    >
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+        <span className="text-xs text-gray-400">
+          {new Date(createdAt).toLocaleString()}
+        </span>
       </div>
-      <div className="w-full flex flex-col items-center gap-4 px-4 min-h-[400px] bg-white rounded-lg shadow">
-        {loading ? (
-          <div className="text-gray-400 text-lg py-20">로딩 중...</div>
-        ) : error ? (
-          <div className="text-red-500 text-lg py-20">{error}</div>
-        ) : posts.length === 0 ? (
-          <div className="text-gray-400 text-lg py-20">게시물이 없습니다.</div>
-        ) : (
-          posts.map((post) => (
-            <PostCard key={post.id} {...post} />
-          ))
+      <div className="text-gray-600 mb-3">{getPreview(content)}</div>
+      <div className="flex items-center text-sm text-gray-500 space-x-4">
+        <span>작성자: {authorName}</span>
+        <span>조회수: {viewCount}</span>
+        <span className="flex items-center gap-1">
+          ❤️ {likeCount}
+        </span>
+        <span>댓글: {comments?.length || 0}</span>
+        {autoSaved && (
+          <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
+            임시저장
+          </span>
+        )}
+        {isMyPost && (
+          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+            내 글
+          </span>
         )}
       </div>
-      {/* 페이지네이션 */}
-      {totalPages > 1 && (
-        <div className="flex items-center gap-4 mt-6">
-          <button
-            onClick={() => setPage(Math.max(0, page - 1))}
-            disabled={page === 0}
-            className="disabled:opacity-50"
-          >
-            &lt;
-          </button>
-          <span>
-            {page + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-            disabled={page === totalPages - 1}
-            className="disabled:opacity-50"
-          >
-            &gt;
-          </button>
+      {/* 플레이리스트 정보 (옵셔널) */}
+      {playlist && (
+        <div className="mt-4 p-3 bg-gray-50 rounded">
+          <div className="font-semibold text-sm mb-1">🎵 {playlist.name}</div>
+          <div className="text-xs text-gray-500 mb-2">{playlist.description}</div>
+          {playlist.tracks && playlist.tracks.length > 0 && (
+            <ul className="text-sm">
+              {playlist.tracks.slice(0, 3).map((track, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <span>{track.trackName} - {track.artist}</span>
+                  <a
+                    href={track.spotifyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-green-600 underline text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Spotify
+                  </a>
+                </li>
+              ))}
+              {playlist.tracks.length > 3 && (
+                <li className="text-xs text-gray-400">
+                  외 {playlist.tracks.length - 3}곡
+                </li>
+              )}
+            </ul>
+          )}
         </div>
       )}
     </div>
   );
-}
+};
+
+export default PostCard;

@@ -12,6 +12,7 @@ public class FollowMapper {
                 follow.getId(),
                 follow.getFollower().getUsername(),
                 follow.getFollowing().getUsername(),
+                follow.getFollowing().getProfileImageUrl(),
                 follow.getCreatedAt()
         );
     }

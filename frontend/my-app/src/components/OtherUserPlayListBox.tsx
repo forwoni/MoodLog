@@ -15,7 +15,7 @@ interface Playlist {
 }
 
 interface OtherUserPlayListBoxProps {
-  username: string; // ✅ username 필수로 변경
+  username: string; 
 }
 
 export const OtherUserPlayListBox = ({

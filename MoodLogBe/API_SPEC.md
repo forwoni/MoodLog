@@ -151,6 +151,38 @@
   * `422`: 변경할 항목이 없음 (newUsername, newPassword)
 ---
 
+### 📷 프로필 이미지 업로드
+
+* **URL:** `POST /api/users/profile-image`
+* **인증 필요:** ✅
+
+* **Request: file : 업로드할 이미지 파일 (multipart/form-data)**
+
+* **Response:** `200 OK`
+
+* **예외:**
+
+  * `400`: 파일이 없거나 형식이 올바르지 않을 때
+  * `401`: 인증 실패(토큰 없음 또는 만료)
+  * `500`: 파일 저장 오류 (예: IOException))
+---
+
+### ✏️ 프로필 이미지 수정
+
+* **URL:** `PUT /api/users/profile-image`
+* **인증 필요:** ✅
+
+* **Request: file : 새 업로드할 이미지 파일 (multipart/form-data)**
+
+* **Response:** `200 OK`
+
+* **예외:**
+
+  * `400`: 파일이 없거나 형식이 올바르지 않을 때
+  * `401`: 인증 실패(토큰 없음 또는 만료)
+  * `500`: 파일 저장 오류 (예: IOException))
+---
+
 ## 📂 Post
 
 ### 📌 게시글 작성
@@ -202,41 +234,49 @@
         {
           "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
           "artist": "ILLENIUM",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
         },
         {
           "trackName": "old song",
           "artist": "Standing Egg",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
         },
         {
           "trackName": "Sad Song - Remastered",
           "artist": "Oasis",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
         },
         {
           "trackName": "Sadder Than Yesterday",
           "artist": "Kim Gun Mo",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
         },
         {
           "trackName": "SAD!",
           "artist": "XXXTENTACION",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
         },
         {
           "trackName": "Are you happy?",
           "artist": "shy martin",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
         },
         {
           "trackName": "슬픈 초대장",
           "artist": "Han Kyung Il",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
         },
         {
           "trackName": "SAD SONG",
           "artist": "CHANMINA",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
         }
       ]
@@ -282,6 +322,7 @@
         {
           "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
           "artist": "ILLENIUM",
+          "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
           "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
         }
       ]
@@ -318,41 +359,49 @@
       {
         "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
         "artist": "ILLENIUM",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
       },
       {
         "trackName": "old song",
         "artist": "Standing Egg",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
       },
       {
         "trackName": "Sad Song - Remastered",
         "artist": "Oasis",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
       },
       {
         "trackName": "Sadder Than Yesterday",
         "artist": "Kim Gun Mo",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
       },
       {
         "trackName": "SAD!",
         "artist": "XXXTENTACION",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
       },
       {
         "trackName": "Are you happy?",
         "artist": "shy martin",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
       },
       {
         "trackName": "슬픈 초대장",
         "artist": "Han Kyung Il",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
       },
       {
         "trackName": "SAD SONG",
         "artist": "CHANMINA",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
       }
     ]
@@ -433,41 +482,49 @@
       {
         "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
         "artist": "ILLENIUM",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
       },
       {
         "trackName": "old song",
         "artist": "Standing Egg",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
       },
       {
         "trackName": "Sad Song - Remastered",
         "artist": "Oasis",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
       },
       {
         "trackName": "Sadder Than Yesterday",
         "artist": "Kim Gun Mo",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
       },
       {
         "trackName": "SAD!",
         "artist": "XXXTENTACION",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
       },
       {
         "trackName": "Are you happy?",
         "artist": "shy martin",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
       },
       {
         "trackName": "슬픈 초대장",
         "artist": "Han Kyung Il",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
       },
       {
         "trackName": "SAD SONG",
         "artist": "CHANMINA",
+        "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
         "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
       }
     ]
@@ -600,12 +657,14 @@ true // 또는 false
     "id": 1,
     "followerUsername": "woni1",
     "followingUsername": "woni",
+    "followingProfileImageUrl": "https://some-url.jpg",
     "createdAt": "2025-05-28T09:30:27.51678"
   },
   {
     "id": 2,
     "followerUsername": "woni2",
     "followingUsername": "woni",
+    "followingProfileImageUrl": "https://some-url.jpg",
     "createdAt": "2025-05-28T09:30:41.321705"
   }
 ]
@@ -645,41 +704,49 @@ true // 또는 false
           {
             "trackName": "Sad Songs (with Said The Sky & Annika Wells)",
             "artist": "ILLENIUM",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/4pioeMejnqa4T3QAEqwVA3"
           },
           {
             "trackName": "old song",
             "artist": "Standing Egg",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/5IFuZw0mqTVZn1xWzfYqbb"
           },
           {
             "trackName": "Sad Song - Remastered",
             "artist": "Oasis",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/7aISpvvTIuvm9N5TNDKCeP"
           },
           {
             "trackName": "Sadder Than Yesterday",
             "artist": "Kim Gun Mo",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/0aE6WVAXv1IjkUaPvkmW4z"
           },
           {
             "trackName": "SAD!",
             "artist": "XXXTENTACION",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/3ee8Jmje8o58CHK66QrVC2"
           },
           {
             "trackName": "Are you happy?",
             "artist": "shy martin",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/6s86N7LVaJZuU4alwKp6XO"
           },
           {
             "trackName": "슬픈 초대장",
             "artist": "Han Kyung Il",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/78kHVc50ML3pR6TNaBVQgP"
           },
           {
             "trackName": "SAD SONG",
             "artist": "CHANMINA",
+            "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
             "spotifyUrl": "https://open.spotify.com/track/0mlCDt9UWfQNY0pxk5jbJK"
           }
         ]
@@ -829,13 +896,13 @@ true // 또는 false
     {
       "track_name": "Sad Songs (with Said The Sky & Annika Wells)",
       "artist": "ILLENIUM",
-      "preview_url": null,
+      "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
       "spotify_url": "https://open.spotify.com/track/4pioeMeJngq8T3QAEqwVA3"
     },
     {
       "track_name": "Endless",
       "artist": "곽진언",
-      "preview_url": null,
+      "album_image": "https://i.scdn.co/image/ab67616d0000b273f429549123dbe8552764ba1d",
       "spotify_url": "https://open.spotify.com/track/29IGd0qsLN56BEaUzh7YOS"
     }
   ]

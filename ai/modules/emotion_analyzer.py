@@ -11,10 +11,10 @@ import re
 from collections import Counter
 
 emotion_keywords = {
-    "우울(부정)": ["우울", "지침", "무기력", "외롭", "눈물", "쓸쓸", "힘들", "상처", "속상", "괴롭", "아팠", "울컥"],
-    "불안(부정)": ["불안", "걱정", "초조", "두려움", "긴장", "혼란"],
+    "우울(부정)": ["우울", "지침", "무기력", "외롭", "눈물", "쓸쓸", "힘들", "상처", "속상", "괴롭", "아팠", "울컥", "힘들", "자살", "외로운", "울적", "우울하다", "우울했", "우울한"],
+    "불안(부정)": ["불안", "걱정", "초조", "두려움", "긴장", "혼란", "복잡"],
     "행복(긍정)": ["행복", "기쁘", "좋았", "즐거웠", "웃음", "설렘", "두근", "기대", "떨림", "즐겁"],
-    "분노(부정)": ["짜증", "화나", "열받", "분노", "억울"],
+    "분노(부정)": ["짜증", "화난다", "열받", "분노", "억울", "화나", "화나다"]
 }
 
 def split_sentences(text: str) -> list:
@@ -32,5 +32,6 @@ def analyze_emotion(text: str) -> str:
 def analyze_long_text(text: str) -> str:
     sentences = split_sentences(text)
     emotions = [analyze_emotion(s) for s in sentences if s.strip()]
+    emotions = [e for e in emotions if e != "중립"]
     count = Counter(emotions)
     return count.most_common(1)[0][0] if count else "중립"

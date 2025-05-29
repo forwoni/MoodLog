@@ -8,12 +8,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LocalFileUploader localFileUploader;
 
     /**
      * 현재 로그인된 사용자 정보 조회
@@ -56,4 +60,33 @@ public class UserService {
                 persistentUser.getEmail()
         );
     }
+    /**
+     *  프로필 이미지 업로드
+     */
+    @Transactional
+    public String updateProfileImage(User user, MultipartFile newFile) {
+        String oldImageUrl = user.getProfileImageUrl();
+        String newImageUrl;
+
+        try {
+            newImageUrl = localFileUploader.uploadFile(newFile, "profile");
+        } catch (IOException e) {
+            throw new RuntimeException("파일 업로드 실패: " + e.getMessage(), e);
+        }
+
+        user.setProfileImageUrl(newImageUrl);
+        userRepository.save(user);
+
+        if (oldImageUrl != null && !oldImageUrl.isBlank()) {
+            try {
+                localFileUploader.deleteFile(oldImageUrl);
+            } catch (IOException e) {
+                // 삭제 실패해도 로깅만 하고 예외 터뜨리지 않도록
+                throw new RuntimeException("기존 파일 삭제 실패: " + e.getMessage(), e);
+            }
+        }
+
+        return newImageUrl;
+    }
+
 }
