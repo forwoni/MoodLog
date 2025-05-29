@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import logoImg from '../assets/moodlog_logo_transparent.png';
 
-function PostDetailPage() {
+function UserPostDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -164,4 +164,4 @@ function PostDetailPage() {
   );
 }
 
-export default PostDetailPage;
+export default UserPostDetailPage;

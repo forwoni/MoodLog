@@ -56,7 +56,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
   // 더블클릭 시 상세 페이지 이동
   const handleDoubleClick = () => {
-    navigate(`/postdetail/${id}`);
+    navigate(`/userpostdetail/${id}`);
   };
 
   return (
