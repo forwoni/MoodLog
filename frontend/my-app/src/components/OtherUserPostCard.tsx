@@ -53,7 +53,7 @@ const OtherUserPostCard: React.FC<OtherUserPostCardProps> = ({
   return (
     <div
       className="border rounded-lg shadow-md bg-white p-6 mb-6 cursor-pointer hover:shadow-lg transition"
-      onDoubleClick={() => navigate(`/userpostdetail/${id}`)}
+      onDoubleClick={() => navigate(`/postdetail/${id}`)}
     >
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-xl font-bold text-gray-800">{title}</h3>
