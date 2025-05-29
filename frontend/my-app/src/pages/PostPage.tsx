@@ -140,7 +140,7 @@ export default function PostPage() {
         if (myPosts.length > 0) {
           postId = myPosts[0].id;
         }
-      }
+      }git 
 
       if (!postId) {
         alert("게시글 ID를 찾을 수 없습니다.");
