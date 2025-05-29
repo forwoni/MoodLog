@@ -1,165 +1,133 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
-import logoImg from '../assets/moodlog_logo_transparent.png';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { HeaderBox } from "../layouts/headerBox";
+import { UserPlayListBox } from "../components/UserPlayListBox";
+import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
+import api from "../services/axiosInstance";
 
 function PostDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const modalRef = useRef<HTMLDivElement | null>(null);
 
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
-  const [playlistOpen, setPlaylistOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState(''); // ← 에러 메시지 상태 추가
-
-  const songsPerPage = 5;
-  const pagedSongs = post?.songs?.slice((currentPage - 1) * songsPerPage, currentPage * songsPerPage) || [];
+  const [error, setError] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        setPlaylistOpen(false);
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await api.get("/users/me");
+        setCurrentUser(res.data);
+      } catch {
+        setCurrentUser(null);
       }
     };
-    if (playlistOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [playlistOpen]);
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`/api/posts/${id}`);
+        const res = await api.get(`/posts/${id}`);
         setPost(res.data);
         setComments(res.data.comments || []);
-        setError('');
+        setError("");
       } catch (err: any) {
-        console.error('데이터 불러오기 실패:', err);
-        setError('게시글이 존재하지 않습니다.');
+        setError("게시글이 존재하지 않습니다.");
       }
     };
     fetchData();
   }, [id]);
 
+  const isMyPost =
+    currentUser &&
+    post &&
+    currentUser.username &&
+    post.authorName &&
+    currentUser.username.trim().toLowerCase() === post.authorName.trim().toLowerCase();
+
+  const handleEdit = () => navigate(`/edit/${id}`);
+  const handleDelete = async () => {
+    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+    try {
+      await api.delete(`/posts/${id}`);
+      alert("게시글이 삭제되었습니다.");
+      navigate("/main");
+    } catch {
+      alert("삭제 실패");
+    }
+  };
+
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-xl text-red-500">
-        <img src={logoImg} alt="logo" className="w-36 mb-4 cursor-pointer" onClick={() => navigate('/main')} />
-        <p>{error}</p>
+      <div className="w-full min-h-screen bg-white">
+        <HeaderBox />
+        <div className="pt-[120px] flex flex-col items-center text-xl text-red-500">
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
 
-  if (!post) return <div className="text-center mt-10 text-lg">로딩 중...</div>;
+  if (!post)
+    return (
+      <div className="w-full min-h-screen bg-white">
+        <HeaderBox />
+        <div className="pt-[160px] text-center text-lg">로딩 중...</div>
+      </div>
+    );
 
   return (
-    <div className="min-h-[2048px] w-[1440px] mx-auto bg-white overflow-y-auto scrollbar-hide">
-      {/* 로고 */}
-      <div className="border-b border-gray-300 p-4">
-        <img src={logoImg} alt="Mood Logo" className="w-24 cursor-pointer" onClick={() => navigate('/main')} />
-      </div>
+    <div className="w-full min-h-screen bg-white">
+      <HeaderBox
+        showEditDelete={isMyPost}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+      <div className="h-[102px]" />
+      <div className="max-w-[1200px] mx-auto pt-6">
+        <div className="flex flex-col items-center">
+          <div className="w-[600px] bg-white rounded-lg shadow border border-black p-10">
+            {/* 제목 */}
+            <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
+            <div className="border-b border-gray-300 mb-6"></div>
 
-      <div className="border-b border-gray-300"></div>
-
-      <div className="max-w-4xl mx-auto bg-white mt-6 p-10 rounded-lg shadow border border-black">
-        {/* 제목 */}
-        <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
-        <div className="border-b border-gray-300 mb-6"></div>
-
-        {/* 본문 */}
-        <div className="text-black whitespace-pre-line leading-relaxed mb-10 min-h-[500px]">
-          {post.content}
-        </div>
-
-        <div className="border-b border-gray-300 mb-6"></div>
-
-        {/* 플레이리스트 카드 */}
-        <div className="flex gap-4 mb-8">
-          {[1, 2].map((_, idx) => (
+            {/* 본문 (HTML 적용) */}
             <div
-              key={idx}
-              onClick={() => setPlaylistOpen(true)}
-              className="w-1/2 bg-white hover:bg-gray-100 rounded-lg p-4 cursor-pointer shadow border border-gray-200"
-            >
-              <div className="h-32 bg-gray-200 rounded mb-2 flex items-center justify-center text-sm text-gray-600">
-                노래 이미지
-              </div>
-              <p className="text-sm text-black">이미지 노래 제목</p>
-              <p className="font-semibold text-black">플레이 리스트 이름</p>
-              <p className="text-sm mt-1">🎵</p>
-            </div>
-          ))}
-        </div>
+              className="text-black whitespace-pre-line leading-relaxed mb-10 min-h-[500px]"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
 
-        <div className="border-b border-gray-300 mb-6"></div>
+            <div className="border-b border-gray-300 mb-6"></div>
 
-        {/* 댓글 */}
-        <div className="text-sm text-gray-600 mb-4">
-          ❤️ {post.likeCount} · 💬 댓글 {comments.length}
-        </div>
-
-        <div>
-          <textarea
-            rows={3}
-            placeholder="댓글을 입력하세요"
-            className="w-full border rounded-md p-3 text-sm"
-          />
-          <button className="mt-2 px-4 py-2 bg-black text-white rounded">등록</button>
-        </div>
-      </div>
-
-      {/* 플레이리스트 모달 */}
-      {playlistOpen && (
-        <div className="absolute top-0 left-0 w-full flex justify-center z-50 mt-20">
-          <div
-            ref={modalRef}
-            className="bg-white rounded-lg w-[420px] max-h-[80vh] overflow-y-auto p-6 shadow-lg relative"
-          >
-            <button
-              onClick={() => setPlaylistOpen(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-black text-xl"
-            >
-              ✕
-            </button>
-
-            <div className="space-y-4 mt-4">
-              {pagedSongs.map((song: any, idx: number) => (
-                <div key={idx} className="flex items-center justify-between bg-gray-100 p-3 rounded">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-300 flex items-center justify-center text-xs text-gray-600">
-                      노래 이미지
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold">{song.title}</div>
-                      <div className="text-xs text-gray-500">🎵 {song.artist}</div>
-                    </div>
-                  </div>
-                  <button className="text-lg text-gray-500 hover:text-black">✕</button>
-                </div>
-              ))}
+            {/* 플레이리스트 박스 하나 중앙 정렬 */}
+            <div className="flex justify-center mb-8">
+              {isMyPost ? (
+                <UserPlayListBox showEditButton={true} username={post.authorName} />
+              ) : (
+                <OtherUserPlayListBox username={post.authorName} />
+              )}
             </div>
 
-            {/* 페이지네이션 */}
-            <div className="flex justify-center mt-6 text-sm space-x-2">
-              {[...Array(Math.ceil((post.songs?.length || 0) / songsPerPage))].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-2 py-1 rounded hover:underline ${currentPage === i + 1 ? 'font-bold underline' : ''}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <span className="ml-2">다음 &gt;</span>
+            <div className="border-b border-gray-300 mb-6"></div>
+
+            {/* 댓글 */}
+            <div className="text-sm text-gray-600 mb-4">
+              ❤️ {post.likeCount} · 💬 댓글 {comments.length}
+            </div>
+
+            <div>
+              <textarea
+                rows={3}
+                placeholder="댓글을 입력하세요"
+                className="w-full border rounded-md p-3 text-sm"
+              />
+              <button className="mt-2 px-4 py-2 bg-black text-white rounded">등록</button>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
