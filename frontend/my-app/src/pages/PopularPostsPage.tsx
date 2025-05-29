@@ -5,19 +5,18 @@ import { Bell, User, X } from "lucide-react";
 import axios from "axios";
 
 const sortOptions = [
-  { label: "최신순", value: "latest" },
   { label: "좋아요 많은 순", value: "likes" },
   { label: "댓글 많은 순", value: "comments" },
 ];
 
 function PopularPostsPage() {
   const [posts, setPosts] = useState<any[]>([]);
-  const [sortBy, setSortBy] = useState("latest");
+  const [sortBy, setSortBy] = useState("likes");
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 6;
+  const postsPerPage = 5;
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -49,11 +48,37 @@ function PopularPostsPage() {
     fetchPosts();
   }, []);
 
-  const sortedPosts = [...posts].sort((a, b) => {
-    if (sortBy === "likes") return b.likeCount - a.likeCount;
-    if (sortBy === "comments") return b.comments.length - a.comments.length;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  // 좋아요 1개 이상, 댓글 1개 이상 필터링 후 정렬
+  const getSortedPosts = () => {
+    if (sortBy === "likes") {
+      const filtered = posts.filter(p => (p.likeCount ?? 0) >= 1);
+      return filtered
+        .sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0))
+        .slice(0, 10);
+    }
+    if (sortBy === "comments") {
+      // comments가 배열이면
+      const filtered = posts.filter(p =>
+        Array.isArray(p.comments)
+          ? p.comments.length >= 1
+          : (p.commentCount ?? 0) >= 1
+      );
+      return filtered
+        .sort((a, b) => {
+          const aCount = Array.isArray(a.comments)
+            ? a.comments.length
+            : a.commentCount ?? 0;
+          const bCount = Array.isArray(b.comments)
+            ? b.comments.length
+            : b.commentCount ?? 0;
+          return bCount - aCount;
+        })
+        .slice(0, 10);
+    }
+    return [];
+  };
+
+  const sortedPosts = getSortedPosts();
 
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
@@ -136,6 +161,7 @@ function PopularPostsPage() {
                   onClick={() => {
                     setSortBy(option.value);
                     setDropdownOpen(false);
+                    setCurrentPage(1); // 정렬 바꿀 때 1페이지로 이동
                   }}
                   className={`px-5 py-3 cursor-pointer hover:bg-gray-100 ${
                     sortBy === option.value ? "bg-blue-100" : ""
@@ -149,22 +175,35 @@ function PopularPostsPage() {
         </div>
       </div>
 
-      {/* 인기글 카드 목록 */}
+      {/* 인기글 카드 목록 (5개씩 표시) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-20">
-        {currentPosts.map(post => (
-          <div
-            key={post.id}
-            className="border p-14 rounded-xl shadow-md hover:shadow-xl transition"
-            onDoubleClick={() => navigate(`/postdetail/${post.id}`)}
-            style={{ cursor: "pointer" }}
-          >
-            <h3 className="text-3xl font-bold mb-8">{post.title}</h3>
-            <div className="text-xl text-gray-700 flex gap-10">
-              <span>♡ {post.likeCount}</span>
-              {post.comments.length > 0 && <span>💬 {post.comments.length}</span>}
-            </div>
+        {currentPosts.length === 0 ? (
+          <div className="col-span-3 text-center text-gray-400 text-2xl py-16">
+            조건에 맞는 인기글이 없습니다.
           </div>
-        ))}
+        ) : (
+          currentPosts.map(post => (
+            <div
+              key={post.id}
+              className="border p-14 rounded-xl shadow-md hover:shadow-xl transition"
+              onDoubleClick={() => navigate(`/postdetail/${post.id}`)}
+              style={{ cursor: "pointer" }}
+            >
+              <h3 className="text-3xl font-bold mb-8">{post.title}</h3>
+              <div className="text-xl text-gray-700 flex gap-10">
+                <span>♡ {post.likeCount ?? 0}</span>
+                <span>
+                  💬{" "}
+                  {Array.isArray(post.comments)
+                    ? post.comments.length
+                    : typeof post.commentCount === "number"
+                    ? post.commentCount
+                    : 0}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* 페이지네이션 */}
@@ -173,7 +212,9 @@ function PopularPostsPage() {
           <button
             key={idx + 1}
             onClick={() => setCurrentPage(idx + 1)}
-            className={`px-4 py-2 border rounded ${currentPage === idx + 1 ? "bg-black text-white" : "bg-white"}`}
+            className={`px-4 py-2 border rounded ${
+              currentPage === idx + 1 ? "bg-black text-white" : "bg-white"
+            }`}
           >
             {idx + 1}
           </button>

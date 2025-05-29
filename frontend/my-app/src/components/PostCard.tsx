@@ -73,7 +73,6 @@ const PostCard: React.FC<PostCardProps> = ({
       <div className="text-gray-600 mb-3">{getPreview(content)}</div>
       <div className="flex items-center text-sm text-gray-500 space-x-4">
         <span>작성자: {authorName}</span>
-        <span>조회수: {viewCount}</span>
         <span className="flex items-center gap-1">
           ❤️ {likeCount}
         </span>
