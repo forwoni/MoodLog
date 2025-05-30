@@ -20,7 +20,11 @@ public class UserController {
      * 현재 로그인된 사용자 정보 조회
      */
     @GetMapping("/me")
-    public ResponseEntity<UserResponseDto> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
         UserResponseDto response = userService.getCurrentUser(userDetails.getUser());
         return ResponseEntity.ok(response);
     }
@@ -29,10 +33,14 @@ public class UserController {
      * 현재 로그인된 사용자 정보 수정
      */
     @PutMapping("/me")
-    public ResponseEntity<UserResponseDto> updateMyInfo(
+    public ResponseEntity<?> updateMyInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody UserUpdateRequestDto dto
     ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
         UserResponseDto response = userService.updateUser(userDetails.getUser(), dto);
         return ResponseEntity.ok(response);
     }
@@ -41,8 +49,14 @@ public class UserController {
      * 프로필 이미지 업로드 (최초 업로드)
      */
     @PostMapping("/profile-image")
-    public ResponseEntity<String> uploadProfileImage(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                     @RequestPart MultipartFile file) {
+    public ResponseEntity<?> uploadProfileImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestPart MultipartFile file
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
         String imageUrl = userService.updateProfileImage(userDetails.getUser(), file);
         return ResponseEntity.ok(imageUrl);
     }
@@ -51,9 +65,14 @@ public class UserController {
      * 프로필 이미지 수정 (덮어쓰기)
      */
     @PutMapping("/profile-image")
-    public ResponseEntity<String> updateProfileImage(
+    public ResponseEntity<?> updateProfileImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestPart MultipartFile file) {
+            @RequestPart MultipartFile file
+    ) {
+        if (userDetails == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
         String newImageUrl = userService.updateProfileImage(userDetails.getUser(), file);
         return ResponseEntity.ok(newImageUrl);
     }

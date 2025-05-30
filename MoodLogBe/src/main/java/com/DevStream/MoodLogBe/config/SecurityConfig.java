@@ -12,6 +12,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -28,16 +33,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1) CSRF 끄기, 세션 사용 안 함
-                .csrf(csrf->csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ 명시적 CORS 설정
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 2) 인증/인가 규칙
                 .authorizeHttpRequests(auth ->
                         auth
+                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 .requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/users/*/posts").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/users/*/playlists").permitAll()  // 🔥 추가!
+                                .requestMatchers(HttpMethod.GET, "/api/users/*/playlists").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/playlists").permitAll()
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
@@ -47,13 +51,23 @@ public class SecurityConfig {
                                 .requestMatchers("/api/spotify/**").permitAll()
                                 .anyRequest().authenticated()
                 )
-
-                // 3) JWT 필터를 스프링 시큐리티 필터 체인 앞단에 추가
                 .addFilterBefore(jwtAuthenticationFilter(),
-                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
-        ;
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOriginPatterns(List.of("*")); // 또는 .addAllowedOriginPattern("*");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean
