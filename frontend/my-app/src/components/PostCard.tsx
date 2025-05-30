@@ -48,10 +48,10 @@ const PostCard: React.FC<PostCardProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  // 본문 미리보기(100자)
+  // 본문 미리보기(2줄)
   const getPreview = (html: string) => {
     const plain = html.replace(/<[^>]+>/g, "");
-    return plain.length > 100 ? plain.slice(0, 100) + "..." : plain;
+    return plain.length > 60 ? plain.slice(0, 60) + "..." : plain;
   };
 
   // 더블클릭 시 상세 페이지 이동
@@ -60,22 +60,36 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   return (
-    <div 
-      className="border rounded-lg shadow-md bg-white p-6 mb-6 cursor-pointer hover:shadow-lg transition"
+    <div
+      className="border rounded-xl shadow bg-white px-6 py-5 mb-5 cursor-pointer hover:shadow-lg transition"
+      style={{
+        minHeight: "155px",
+        maxHeight: "230px",
+        width: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+      }}
       onDoubleClick={handleDoubleClick}
     >
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-        <span className="text-xs text-gray-400">
+      {/* 제목/날짜 */}
+      <div className="flex justify-between items-center mb-1">
+        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+        <span className="text-xs text-gray-500">
           {new Date(createdAt).toLocaleString()}
         </span>
       </div>
-      <div className="text-gray-600 mb-3">{getPreview(content)}</div>
-      <div className="flex items-center text-sm text-gray-500 space-x-4">
+
+      {/* 본문 미리보기 */}
+      <div className="text-gray-800 mb-1 text-base" style={{ minHeight: "28px" }}>
+        {getPreview(content)}
+      </div>
+
+      {/* 메타 정보 */}
+      <div className="flex items-center text-sm text-gray-600 gap-4 mb-1">
         <span>작성자: {authorName}</span>
-        <span className="flex items-center gap-1">
-          ❤️ {likeCount}
-        </span>
+        <span>❤️ {likeCount}</span>
         <span>댓글: {comments?.length || 0}</span>
         {autoSaved && (
           <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
@@ -88,11 +102,14 @@ const PostCard: React.FC<PostCardProps> = ({
           </span>
         )}
       </div>
-      {/* 플레이리스트 정보 (옵셔널) */}
+
+      {/* 플레이리스트 정보 */}
       {playlist && (
-        <div className="mt-4 p-3 bg-gray-50 rounded">
-          <div className="font-semibold text-sm mb-1">🎵 {playlist.name}</div>
-          <div className="text-xs text-gray-500 mb-2">{playlist.description}</div>
+        <div className="mt-2 p-2 bg-gray-50 rounded">
+          <div className="font-semibold text-sm mb-1">
+            🎵 {playlist.name}
+          </div>
+          <div className="text-xs text-gray-500 mb-1">{playlist.description}</div>
           {playlist.tracks && playlist.tracks.length > 0 && (
             <ul className="text-sm">
               {playlist.tracks.slice(0, 3).map((track, idx) => (

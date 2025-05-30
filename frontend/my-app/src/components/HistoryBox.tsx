@@ -71,8 +71,8 @@ const HistoryBox: React.FC<HistoryBoxProps> = ({
         >
           <option value="recent">최신순</option>
           <option value="likes">좋아요순</option>
-          <option value="comments">댓글순</option>
         </select>
+
       </div>
       <div className="w-full flex flex-col items-center gap-4 px-4">
         {loading ? (
