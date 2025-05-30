@@ -29,14 +29,26 @@ function UserCard({
   onDelete?: () => void;
 }) {
   const navigate = useNavigate();
-  const displayName = type === "following" 
-    ? user.followingUsername 
+  const displayName = type === "following"
+    ? user.followingUsername
     : user.followerUsername;
 
-  const handleClick = () => navigate(`/user/${displayName}`);
+  // 더블클릭 시 상대방 히스토리 페이지로 이동
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/user/${displayName}/posts`);
+  };
+
+  const handleClick = () => {
+    // 단일 클릭 동작 필요시 구현
+  };
 
   return (
-    <div className="flex items-center justify-between bg-white border rounded-lg px-6 py-6 mb-6 cursor-pointer transition hover:bg-gray-50" onClick={handleClick}>
+    <div
+      className="flex items-center justify-between bg-white border rounded-lg px-6 py-6 mb-6 cursor-pointer transition hover:bg-gray-50"
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
+    >
       <div className="flex items-center gap-6">
         <img
           src={user.followingProfileImageUrl || "/default-profile.png"}
@@ -72,10 +84,21 @@ export default function FollowManagementPage() {
   const [followers, setFollowers] = useState<FollowUser[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [refreshCounter, setRefreshCounter] = useState(0); // 새로고침 트리거
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
+  // 팔로우 변경 이벤트 리스너
+  useEffect(() => {
+    const handleFollowUpdate = () => {
+      setRefreshCounter(prev => prev + 1);
+    };
+    window.addEventListener("followUpdated", handleFollowUpdate);
+    return () => {
+      window.removeEventListener("followUpdated", handleFollowUpdate);
+    };
+  }, []);
+
+  // 팔로잉/팔로워 목록 조회
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -84,15 +107,21 @@ export default function FollowManagementPage() {
         params: {
           page: currentPage,
           size: 6,
-          search: searchQuery,
-          _: refreshCounter // 캐시 방지
+          _: Date.now() // 캐시 방지
         }
       });
-      
+
       if (activeTab === "following") {
-        setFollowings(res.data.content || []);
+        const list = Array.isArray(res.data)
+          ? res.data
+          : res.data.content || [];
+        setFollowings(list);
+        console.log("팔로잉 목록:", list);
       } else {
-        setFollowers(res.data.content || []);
+        const list = Array.isArray(res.data)
+          ? res.data
+          : res.data.content || [];
+        setFollowers(list);
       }
       setTotalPages(res.data.totalPages || 1);
     } catch (error) {
@@ -100,7 +129,7 @@ export default function FollowManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, currentPage, searchQuery, refreshCounter]);
+  }, [activeTab, currentPage, refreshCounter]);
 
   useEffect(() => {
     fetchUsers();
@@ -109,14 +138,11 @@ export default function FollowManagementPage() {
   const handleDeleteFollowing = async (username: string) => {
     try {
       await api.delete("/social/unfollow", { data: { followingUsername: username } });
-      setRefreshCounter(prev => prev + 1); // 즉시 갱신
+      setRefreshCounter(prev => prev + 1);
     } catch (error) {
       alert("이웃 삭제 실패");
     }
   };
-
-  // 다른 페이지에서 팔로우 추가 시 이 함수 호출 필요
-  const triggerRefresh = () => setRefreshCounter(prev => prev + 1);
 
   if (!currentUser) {
     return (
@@ -130,21 +156,11 @@ export default function FollowManagementPage() {
   return (
     <div className="w-[1440px] mx-auto flex flex-col items-center bg-white min-h-screen">
       <HeaderBox />
-      
-      <div className="w-full flex justify-center mt-[102px]">
-        <UserInfoBox />
-      </div>
 
-      <div className="w-[800px] mx-auto mt-6">
-        <input
-          type="text"
-          placeholder="이름 검색"
-          value={searchQuery}
-          onChange={(e) => {
-            setCurrentPage(0);
-            setSearchQuery(e.target.value);
-          }}
-          className="w-full h-12 px-6 rounded-full border border-gray-200 bg-[#f7f7f7] text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-200"
+      <div className="w-full flex justify-center mt-[102px]">
+        <UserInfoBox
+          userName={currentUser.username}
+          userDescription={currentUser.nickname || "소개글이 없습니다"}
         />
       </div>
 
@@ -156,8 +172,8 @@ export default function FollowManagementPage() {
               setCurrentPage(0);
             }}
             className={`px-4 py-2 ${
-              activeTab === "following" 
-                ? "border-b-2 border-purple-600 text-purple-600" 
+              activeTab === "following"
+                ? "border-b-2 border-purple-600 text-purple-600"
                 : "text-gray-500"
             }`}
           >
@@ -169,8 +185,8 @@ export default function FollowManagementPage() {
               setCurrentPage(0);
             }}
             className={`px-4 py-2 ${
-              activeTab === "follower" 
-                ? "border-b-2 border-purple-600 text-purple-600" 
+              activeTab === "follower"
+                ? "border-b-2 border-purple-600 text-purple-600"
                 : "text-gray-500"
             }`}
           >
@@ -189,8 +205,8 @@ export default function FollowManagementPage() {
                   user={user}
                   type={activeTab}
                   onDelete={
-                    activeTab === "following" 
-                      ? () => handleDeleteFollowing(user.followingUsername) 
+                    activeTab === "following"
+                      ? () => handleDeleteFollowing(user.followingUsername)
                       : undefined
                   }
                 />
