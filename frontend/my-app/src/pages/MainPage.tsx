@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBox from '../components/searchBox';
 import logo from '../assets/moodlog_logo_transparent.png';
@@ -13,14 +13,60 @@ import {
   FileText,
   Settings
 } from 'lucide-react';
+import api from '../services/axiosInstance'; // axios 인스턴스 (토큰 자동 처리)
+
+interface Notification {
+  id: number;
+  message: string;
+  read: boolean;
+  timestamp: string;
+  link?: string; // 알림 클릭 시 이동 경로
+}
 
 function MainPage() {
+  const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const navigate = useNavigate();
-
-  const notifRef = useRef<HTMLDivElement>(null);     
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // 알림 목록 API 연동
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get<Notification[]>('/notifications');
+      setNotifications(res.data);
+    } catch (error) {
+      console.error('알림 조회 실패:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  // 알림 클릭 시 읽음 처리 및 이동
+  const handleNotificationClick = async (id: number, link?: string) => {
+    try {
+      await api.put(`/notifications/${id}/read`);
+      setNotifications((prev) =>
+        prev.map((noti) => (noti.id === id ? { ...noti, read: true } : noti))
+      );
+      if (link) navigate(link);
+    } catch (error) {
+      console.error('알림 읽음 처리 실패:', error);
+    }
+  };
+
+  // 전체 읽음 처리
+  const markAllAsRead = async () => {
+    try {
+      await api.put('/notifications/read-all');
+      setNotifications((prev) => prev.map((noti) => ({ ...noti, read: true })));
+    } catch (error) {
+      console.error('전체 읽음 처리 실패:', error);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -35,31 +81,81 @@ function MainPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 알림 패널 UI
+  const NotificationPanel = () => (
+    <div
+      ref={notifRef}
+      className="absolute right-16 top-28 w-80 bg-white rounded-xl shadow-xl p-4 z-10 border"
+    >
+      <div className="flex items-center justify-between border-b pb-2 mb-4">
+        <div className="flex items-center gap-2">
+          <Bell className="text-gray-700" />
+          <span className="font-medium">알림</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={markAllAsRead}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            전체 읽음
+          </button>
+          <X
+            className="cursor-pointer"
+            onClick={() => setShowNotifications(false)}
+          />
+        </div>
+      </div>
+      <div className="max-h-60 overflow-y-auto">
+        {notifications.length === 0 ? (
+          <div className="text-center text-gray-500">알림이 없습니다.</div>
+        ) : (
+          notifications.map((notification) => (
+            <div
+              key={notification.id}
+              onClick={() => handleNotificationClick(notification.id, notification.link)}
+              className={`p-3 cursor-pointer hover:bg-gray-50 rounded-md ${
+                !notification.read ? 'bg-blue-50' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-sm">{notification.message}</p>
+                {!notification.read && (
+                  <div className="w-2 h-2 bg-blue-500 rounded-full ml-2" />
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="w-screen h-screen flex flex-col bg-[#F1F1F1] overflow-hidden text-[1.5rem]">
       {/* 상단 영역 */}
       <header className="h-[50%] bg-[#DAD6D6] flex flex-col items-center justify-center relative">
-        {/* 로고 클릭 시 메인으로 */}
         <img
           src={logo}
           alt="Mood Log"
           className="h-72 mb-12 cursor-pointer"
           onClick={() => navigate('/main')}
         />
-
-        {/* 검색창 컴포넌트로 대체 */}
-      <SearchBox />
-
+        <SearchBox />
         <div className="absolute top-10 right-14 flex gap-10">
-          <Bell className="w-9 h-9 cursor-pointer" onClick={() => setShowNotifications(!showNotifications)} />
-          <User className="w-9 h-9 cursor-pointer" onClick={() => setShowProfileMenu(!showProfileMenu)} />
+          <Bell
+            className="w-9 h-9 cursor-pointer"
+            onClick={() => setShowNotifications(!showNotifications)}
+          />
+          <User
+            className="w-9 h-9 cursor-pointer"
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+          />
         </div>
       </header>
 
-      {/* 본문 구분선 */}
       <div className="h-[2px] w-full bg-black" />
 
-      {/* 하단 본문 영역 */}
       <main className="flex-1 flex flex-row px-36 py-10 bg-[#EFEFEF] text-[1.5rem] overflow-hidden">
         <section className="w-[580px] h-[100%] bg-white rounded-xl border border-gray-300 p-6 shadow-md flex flex-col">
           <h2 className="text-4xl font-bold mb-6">🎵 실시간 노래차트</h2>
@@ -104,20 +200,7 @@ function MainPage() {
       </main>
 
       {/* 알림창 */}
-      {showNotifications && (
-        <div
-          ref={notifRef}
-          className="absolute right-16 top-28 w-72 bg-white rounded-xl shadow-xl p-4 z-10 border"
-        >
-          <div className="flex items-center justify-between border-b pb-2 mb-4">
-            <Bell className="text-gray-700" />
-            <X className="cursor-pointer" onClick={() => setShowNotifications(false)} />
-          </div>
-          <div className="bg-gray-100 h-40 rounded-md mb-4"></div>
-          <div className="h-[1px] bg-gray-300" />
-          <div className="h-10 bg-white" />
-        </div>
-      )}
+      {showNotifications && <NotificationPanel />}
 
       {/* 프로필 메뉴 */}
       {showProfileMenu && (
@@ -158,4 +241,3 @@ function MainPage() {
 }
 
 export default MainPage;
-
