@@ -10,7 +10,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class EmotionAnalysisService {
-    private final WebClient webClient;
+    private final WebClient webClient; // ✅ 자료형 추가
 
     /**
      * 사용자 텍스트를 AI 서버로 보내고, 감정 분석 및 음악 추천 결과를 받음.
@@ -24,6 +24,6 @@ public class EmotionAnalysisService {
                 .bodyValue(Map.of("text", text))
                 .retrieve()
                 .bodyToMono(EmotionResponse.class)
-                .block(); // 동기식으로 결과 받기 (비동기라면 .subscribe())
+                .block(); // 동기식으로 결과 받기
     }
 }
