@@ -65,7 +65,6 @@ export default function OtherUserHistoryPage() {
         setIsFollowing(res.data);
       } catch (error) {
         setIsFollowing(false);
-        // 에러는 무시(비로그인 등)
       }
     };
     checkFollowStatus();
@@ -95,21 +94,22 @@ export default function OtherUserHistoryPage() {
     fetchPosts();
   }, [username, sort, page]);
 
-  // 3. 팔로우/언팔로우 핸들러
+  // 3. 팔로우/언팔로우 핸들러 (추가: 이벤트 발송)
   const handleFollow = async () => {
     if (!username || !currentUser) return;
     try {
       setFollowLoading(true);
       if (isFollowing) {
-        // 언팔로우
         await api.delete("/social/unfollow", {
           data: { followingUsername: username },
         });
       } else {
-        // 팔로우
         await api.post("/social/follow", { followingUsername: username });
       }
       setIsFollowing(!isFollowing);
+      
+      // 팔로우 변경 이벤트 발송
+      window.dispatchEvent(new CustomEvent("followUpdated"));
     } catch (error: any) {
       alert(error.response?.data?.message || "처리 중 오류가 발생했습니다.");
     } finally {
