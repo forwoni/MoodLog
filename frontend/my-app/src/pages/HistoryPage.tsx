@@ -1,14 +1,15 @@
+// HistoryPage.tsx
 import React, { useEffect, useState } from "react";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 import SearchBox from "../components/searchBox";
 import { UserPlayListTitle } from "../components/UserPlayListTitle";
-import { UserPlayListBox } from "../components/UserPlayListBox"
+import { UserPlayListBox } from "../components/UserPlayListBox";
 import HistoryBox from "../components/HistoryBox";
+import PlaylistModal from "../components/PlaylistModal";
 import { useUser } from "../contexts/UserContext";
 
-// 타입 정의
 interface PlaylistTrack {
   trackName: string;
   artist: string;
@@ -58,6 +59,18 @@ export default function HistoryPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const openModal = (playlist: Playlist) => {
+    setSelectedPlaylist(playlist);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setSelectedPlaylist(null);
+    setShowModal(false);
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -120,9 +133,13 @@ export default function HistoryPage() {
             page={page}
             setPage={setPage}
             totalPages={totalPages}
+            onPlaylistClick={openModal}
           />
         </div>
       </div>
+      {showModal && selectedPlaylist && (
+        <PlaylistModal onClose={closeModal} tracks={selectedPlaylist.tracks} />
+      )}
     </div>
   );
 }

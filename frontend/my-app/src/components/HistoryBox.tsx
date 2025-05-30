@@ -2,7 +2,7 @@ import React from "react";
 import PostCard from "./PostCard";
 import { useUser } from "../contexts/UserContext";
 
-// 타입 정의 (Post, Playlist 등은 HistoryPage.tsx와 동일)
+// 타입 정의
 interface PlaylistTrack {
   trackName: string;
   artist: string;
@@ -43,6 +43,7 @@ interface HistoryBoxProps {
   page: number;
   setPage: (page: number) => void;
   totalPages: number;
+  onPlaylistClick: (playlist: Playlist) => void; // ✅ 추가
 }
 
 const HistoryBox: React.FC<HistoryBoxProps> = ({
@@ -54,6 +55,7 @@ const HistoryBox: React.FC<HistoryBoxProps> = ({
   page,
   setPage,
   totalPages,
+  onPlaylistClick, // ✅ 추가
 }) => {
   const { currentUser } = useUser();
 
@@ -71,9 +73,10 @@ const HistoryBox: React.FC<HistoryBoxProps> = ({
         >
           <option value="recent">최신순</option>
           <option value="likes">좋아요순</option>
+          <option value="comments">댓글순</option>
         </select>
-
       </div>
+
       <div className="w-full flex flex-col items-center gap-4 px-4">
         {loading ? (
           <div className="text-gray-400 text-lg">로딩 중...</div>
@@ -83,14 +86,24 @@ const HistoryBox: React.FC<HistoryBoxProps> = ({
           <div className="text-gray-400 text-lg">게시물 없음</div>
         ) : (
           posts.map((post) => (
-            <PostCard
-              key={post.id}
-              {...post}
-              isMyPost={post.authorName === currentUser?.username}
-            />
+            <div key={post.id} className="w-full">
+              <PostCard
+                {...post}
+                isMyPost={post.authorName === currentUser?.username}
+              />
+              {post.playlist && (
+                <button
+                  onClick={() => onPlaylistClick(post.playlist!)}
+                  className="mt-2 text-sm text-blue-500 underline"
+                >
+                  플레이리스트 보기
+                </button>
+              )}
+            </div>
           ))
         )}
       </div>
+
       {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="flex items-center gap-4 mt-4">
