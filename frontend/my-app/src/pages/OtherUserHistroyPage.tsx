@@ -5,6 +5,7 @@ import { HeaderBox } from "../layouts/headerBox";
 import OtherUserInfoBox from "../components/OtherUserInfoBox";
 import OtherUserHistoryBox from "../components/OtherUserHistoryBox";
 import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
+import PlaylistModal from "../components/PlaylistModal"; // ✅ 모달 임포트!
 import { useUser } from "../contexts/UserContext";
 
 // 타입 정의
@@ -12,6 +13,7 @@ interface PlaylistTrack {
   trackName: string;
   artist: string;
   spotifyUrl: string;
+  albumImage?: string;
 }
 interface Playlist {
   id: number;
@@ -56,6 +58,10 @@ export default function OtherUserHistoryPage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
+  // ✅ 모달 상태
+  const [showModal, setShowModal] = useState(false);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+
   // 1. 팔로우 상태 확인
   useEffect(() => {
     const checkFollowStatus = async () => {
@@ -94,7 +100,18 @@ export default function OtherUserHistoryPage() {
     fetchPosts();
   }, [username, sort, page]);
 
-  // 3. 팔로우/언팔로우 핸들러 (추가: 이벤트 발송)
+  // 💡 Playlist 모달 핸들러
+  const openModal = (playlist: Playlist) => {
+    setSelectedPlaylist(playlist);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setSelectedPlaylist(null);
+    setShowModal(false);
+  };
+
+  // 3. 팔로우/언팔로우
   const handleFollow = async () => {
     if (!username || !currentUser) return;
     try {
@@ -107,8 +124,6 @@ export default function OtherUserHistoryPage() {
         await api.post("/social/follow", { followingUsername: username });
       }
       setIsFollowing(!isFollowing);
-      
-      // 팔로우 변경 이벤트 발송
       window.dispatchEvent(new CustomEvent("followUpdated"));
     } catch (error: any) {
       alert(error.response?.data?.message || "처리 중 오류가 발생했습니다.");
@@ -121,7 +136,7 @@ export default function OtherUserHistoryPage() {
     <div className="w-[1440px] mx-auto flex flex-col items-center">
       <HeaderBox />
 
-      {/* InfoBox + 팔로우 버튼 오버레이 */}
+      {/* InfoBox + 팔로우 버튼 */}
       <div className="w-[1440px] mx-auto mt-[102px] flex justify-center relative">
         <OtherUserInfoBox authorName={username || ""} />
         {currentUser?.username !== username && (
@@ -129,8 +144,8 @@ export default function OtherUserHistoryPage() {
             onClick={handleFollow}
             disabled={followLoading}
             className={`absolute top-8 right-32 px-6 py-2 rounded-full font-semibold transition-colors
-              ${isFollowing 
-                ? "bg-red-100 text-red-600 hover:bg-red-200 border border-red-300" 
+              ${isFollowing
+                ? "bg-red-100 text-red-600 hover:bg-red-200 border border-red-300"
                 : "bg-purple-600 text-white hover:bg-purple-700"}
             `}
             style={{ zIndex: 10 }}
@@ -147,7 +162,10 @@ export default function OtherUserHistoryPage() {
       {/* 메인 2단 레이아웃 */}
       <div className="flex flex-row mt-[40px] w-full px-[170px]">
         <div className="w-[350px]">
-          <OtherUserPlayListBox username={username || ""} />
+          <OtherUserPlayListBox
+            username={username || ""}
+            playlist={posts.find((p) => p.playlist)?.playlist || null}
+          />
         </div>
         <div className="ml-[100px] flex-1">
           <OtherUserHistoryBox
@@ -159,9 +177,15 @@ export default function OtherUserHistoryPage() {
             page={page}
             setPage={setPage}
             totalPages={totalPages}
+            onPlaylistClick={openModal} // ✅ 플레이리스트 모달 열기!
           />
         </div>
       </div>
+
+      {/* 플레이리스트 모달 */}
+      {showModal && selectedPlaylist && (
+        <PlaylistModal onClose={closeModal} tracks={selectedPlaylist.tracks} />
+      )}
     </div>
   );
 }

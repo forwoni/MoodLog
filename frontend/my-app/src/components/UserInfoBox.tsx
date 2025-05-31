@@ -27,27 +27,25 @@ export const UserInfoBox = (): React.JSX.Element => {
   }, []);
 
   return (
-    <div
-      className="flex w-[1440px] items-center justify-center gap-10 px-[170px] py-[60px] relative bg-white"
-      style={{
-        background:
-          "linear-gradient(90deg, rgba(160,127,176,0.6) 0%, rgba(238,204,255,0.6) 100%)"
-      }}
-    >
-      {/* 프로필 이미지 자리 (원형) */}
-      <div className="relative w-[120px] h-[120px] bg-[#fff9fa] rounded-[50px]" />
-
-      {/* 사용자 정보 */}
-      <div className="flex flex-col gap-3 flex-1 grow items-center relative">
-        <div className="self-stretch mt-[-1px] font-bold text-[32px] leading-8 tracking-[0]">
-          {userInfo ? userInfo.username : "닉네임 없음"}
+    <div className="max-w-[1440px] w-full mx-auto px-8">
+      <div className="bg-gradient-to-r from-purple-200/60 to-purple-300/60 rounded-2xl shadow-md p-8 flex items-center gap-6">
+        {/* 프로필 이미지 */}
+        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center overflow-hidden shadow">
+          {userInfo?.profileImage ? (
+            <img
+              src={userInfo.profileImage}
+              alt="프로필"
+              className="w-full h-full object-cover rounded-full"
+            />
+          ) : (
+            <span className="text-gray-400 text-xl">🙂</span>
+          )}
         </div>
-        <div className="flex gap-1.5 self-stretch w-full items-center relative">
-          <div className="inline-flex justify-center gap-0.5 px-1 py-0.5 bg-[#d8d8d880] rounded-sm overflow-hidden border border-solid border-[#0000001a] items-center">
-            <div className="w-fit mt-[-0.5px] font-normal text-black text-xs leading-4 whitespace-nowrap">
-              {userInfo ? userInfo.email : "이메일 정보 없음"}
-            </div>
-          </div>
+
+        {/* 사용자 정보 */}
+        <div className="flex flex-col">
+          <div className="text-xl font-bold text-gray-800">{userInfo?.username || "닉네임 없음"}</div>
+          <div className="text-sm text-gray-600">{userInfo?.email || "이메일 정보 없음"}</div>
         </div>
       </div>
     </div>

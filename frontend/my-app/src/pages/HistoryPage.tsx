@@ -1,35 +1,32 @@
-// HistoryPage.tsx
 import React, { useEffect, useState } from "react";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
-import SearchBox from "../components/searchBox";
-import { UserPlayListTitle } from "../components/UserPlayListTitle";
-import { UserPlayListBox } from "../components/UserPlayListBox";
+import SearchBox from "../components/SearchBox";
 import HistoryBox from "../components/HistoryBox";
 import PlaylistModal from "../components/PlaylistModal";
 import { useUser } from "../contexts/UserContext";
+import UserPlayListBox from "../components/UserPlayListBox";
 
+// 타입 정의
 interface PlaylistTrack {
   trackName: string;
   artist: string;
   spotifyUrl: string;
+  albumImage?: string;
 }
-
 interface Playlist {
   id: number;
   name: string;
   description: string;
   tracks: PlaylistTrack[];
 }
-
 interface Comment {
   id: number;
   content: string;
   authorUsername: string;
   createdAt: string;
 }
-
 interface Post {
   id: number;
   title: string;
@@ -43,12 +40,9 @@ interface Post {
   comments: Comment[];
   playlist?: Playlist;
 }
-
 interface Page<T> {
   content: T[];
-  pageable: { pageNumber: number; pageSize: number };
   totalPages: number;
-  totalElements: number;
 }
 
 export default function HistoryPage() {
@@ -74,31 +68,26 @@ export default function HistoryPage() {
 
   useEffect(() => {
     const fetchPosts = async () => {
+      if (!currentUser?.username) {
+        setError("로그인이 필요합니다.");
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
-        if (!currentUser?.username) {
-          setError("로그인이 필요합니다.");
-          setPosts([]);
-          setLoading(false);
-          return;
-        }
+
         const res = await api.get<Page<Post>>(
           `/users/${currentUser.username}/posts`,
           { params: { sort, page, size: 6 } }
         );
-        if (Array.isArray(res.data.content)) {
-          setPosts(res.data.content);
-          setTotalPages(res.data.totalPages || 1);
-        } else {
-          setPosts([]);
-          setTotalPages(1);
-          setError("서버 응답 형식 오류");
-        }
-      } catch (err) {
+
+        setPosts(res.data.content || []);
+        setTotalPages(res.data.totalPages || 1);
+      } catch {
         setError("게시글을 불러오는 중 오류가 발생했습니다.");
         setPosts([]);
-        setTotalPages(1);
       } finally {
         setLoading(false);
       }
@@ -107,36 +96,67 @@ export default function HistoryPage() {
   }, [currentUser, sort, page]);
 
   return (
-    <div className="w-[1440px] mx-auto flex flex-col items-center">
+    <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
+      {/* 헤더 */}
       <HeaderBox />
-      <div className="w-[1440px] mx-auto mt-[102px]">
+
+      {/* 유저 인포 영역 */}
+      <div className="max-w-[1440px] w-full mx-auto px-8 mt-[102px]">
         <UserInfoBox />
       </div>
-      <div className="mt-[23px] flex justify-center">
-        <SearchBox />
-      </div>
-      <div className="flex flex-row mt-[40px]">
-        <div>
-          <UserPlayListTitle />
+
+      {/* 메인 콘텐츠: 좌-우 1:1 레이아웃 */}
+      <main className="grid grid-cols-[1.2fr_1fr] gap-6 max-w-[1440px] w-full mx-auto px-8 mt-8">
+        {/* 좌측: 플레이리스트 */}
+        <aside className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">나의 플레이리스트</h2>
           <UserPlayListBox
             showEditButton={true}
+            playlist={posts.find((p) => p.playlist)?.playlist || null}
             username={currentUser?.username || ""}
           />
-        </div>
-        <div className="ml-[70px] flex-1">
-          <HistoryBox
-            posts={posts}
-            loading={loading}
-            error={error}
-            sort={sort}
-            setSort={setSort}
-            page={page}
-            setPage={setPage}
-            totalPages={totalPages}
-            onPlaylistClick={openModal}
-          />
-        </div>
-      </div>
+        </aside>
+
+        {/* 우측: 게시글 */}
+        <section className="flex flex-col gap-4">
+          <SearchBox />
+
+          {/* 정렬 기준 */}
+          <div className="flex justify-end items-center gap-2 text-sm text-gray-500">
+            <label htmlFor="sort">정렬 기준</label>
+            <select
+              id="sort"
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as typeof sort);
+                setPage(0);
+              }}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-purple-400 focus:border-purple-400"
+            >
+              <option value="recent">최신순</option>
+              <option value="likes">좋아요순</option>
+              <option value="comments">댓글순</option>
+            </select>
+          </div>
+
+          {/* 게시글 목록 */}
+          <div className="flex flex-col gap-4">
+            <HistoryBox
+              posts={posts}
+              loading={loading}
+              error={error}
+              sort={sort}
+              setSort={setSort}
+              page={page}
+              setPage={setPage}
+              totalPages={totalPages}
+              onPlaylistClick={openModal}
+            />
+          </div>
+        </section>
+      </main>
+
+      {/* 모달 */}
       {showModal && selectedPlaylist && (
         <PlaylistModal onClose={closeModal} tracks={selectedPlaylist.tracks} />
       )}

@@ -1,15 +1,42 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { HeaderBox } from "../layouts/headerBox";
-import { UserPlayListBox } from "../components/UserPlayListBox";
+import UserPlayListBox from "../components/UserPlayListBox";
 import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
 import api from "../services/axiosInstance";
+
+// 타입 선언
+interface Track {
+  trackName: string;
+  artist: string;
+  spotifyUrl: string;
+}
+
+interface Playlist {
+  name: string;
+  description: string;
+  tracks: Track[];
+}
+
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  autoSaved: boolean;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
+  likeCount: number;
+  comments: any[];
+  playlist: Playlist | null;
+}
 
 function PostDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [post, setPost] = useState<any>(null);
+  const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -28,8 +55,8 @@ function PostDetailPage() {
       try {
         const res = await api.get("/users/me");
         setCurrentUser(res.data);
-      } catch {
-        setCurrentUser(null);
+      } catch (error) {
+        console.warn("사용자 정보 조회 실패", error);
       }
     };
     fetchCurrentUser();
@@ -57,9 +84,13 @@ function PostDetailPage() {
 
   // 댓글 목록만 새로 불러오는 함수
   const fetchComments = async () => {
-    const commentsRes = await api.get(`/posts/${id}/comments`);
-    const filtered = (commentsRes.data || []).filter((c: any) => !!c.id);
-    setComments(filtered);
+    try {
+      const commentsRes = await api.get(`/posts/${id}/comments`);
+      const filtered = (commentsRes.data || []).filter((c: any) => !!c.id);
+      setComments(filtered);
+    } catch (error) {
+      console.warn("댓글 조회 실패", error);
+    }
   };
 
   const isMyPost =
@@ -67,19 +98,20 @@ function PostDetailPage() {
     post &&
     currentUser.username &&
     post.authorName &&
-    currentUser.username.trim().toLowerCase() === post.authorName.trim().toLowerCase();
+    currentUser.username.trim().toLowerCase() ===
+      post.authorName.trim().toLowerCase();
 
   // 좋아요 토글
   const handleLike = async () => {
     try {
       const newLiked = !liked;
       setLiked(newLiked);
-      setLikeCount((prev) => newLiked ? prev + 1 : prev - 1);
+      setLikeCount((prev) => (newLiked ? prev + 1 : prev - 1));
 
       await api.post(`/posts/${id}/like`, { like: newLiked });
     } catch {
       setLiked((prev) => !prev);
-      setLikeCount((prev) => liked ? prev + 1 : prev - 1);
+      setLikeCount((prev) => (liked ? prev + 1 : prev - 1));
       alert("좋아요 처리 실패");
     }
   };
@@ -162,7 +194,7 @@ function PostDetailPage() {
             <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
             <div className="border-b border-gray-300 mb-6"></div>
 
-            {/* 본문 (HTML 적용) */}
+            {/* 본문 */}
             <div
               className="text-black whitespace-pre-line leading-relaxed mb-10 min-h-[500px]"
               dangerouslySetInnerHTML={{ __html: post.content }}
@@ -170,18 +202,24 @@ function PostDetailPage() {
 
             <div className="border-b border-gray-300 mb-6"></div>
 
-            {/* 플레이리스트 박스 하나 중앙 정렬 */}
+            {/* 플레이리스트 박스 */}
             <div className="flex justify-center mb-8">
               {isMyPost ? (
-                <UserPlayListBox showEditButton={true} username={post.authorName} />
+                <UserPlayListBox
+                  showEditButton={true}
+                  playlist={post.playlist}
+                />
               ) : (
-                <OtherUserPlayListBox username={post.authorName} />
+                <OtherUserPlayListBox
+                  username={post.authorName}
+                  playlist={post.playlist}
+                />
               )}
             </div>
 
             <div className="border-b border-gray-300 mb-6"></div>
 
-            {/* 좋아요/댓글 수 + 좋아요 버튼 */}
+            {/* 좋아요/댓글 */}
             <div className="text-sm text-gray-600 mb-4 flex items-center gap-2">
               <button
                 onClick={handleLike}
@@ -233,7 +271,7 @@ function PostDetailPage() {
   );
 }
 
-// 댓글 컴포넌트 (수정 기능 없음)
+// 댓글 컴포넌트
 function CommentItem({
   comment,
   currentUser,
@@ -243,7 +281,6 @@ function CommentItem({
   currentUser: any;
   onDelete: () => void;
 }) {
-  // API 명세에 따라 작성자 확인
   const isAuthor =
     currentUser &&
     comment.authorUsername &&

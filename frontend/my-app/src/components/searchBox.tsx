@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, Clock } from "lucide-react";
 import api from "../services/axiosInstance";
+import axios from "axios";
 import { useUser } from "../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
 
@@ -58,7 +59,6 @@ const SearchBox: React.FC<SearchBoxProps> = ({
         return;
       }
       try {
-        // 연관검색어 API가 있다고 가정
         const { data } = await api.get<{ suggestions: Suggestion[] }>("/suggest", {
           params: { query: debouncedQuery }
         });
@@ -80,13 +80,13 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     } catch { /* 무시 */ }
   }, [currentUser]);
 
-  // 검색 실행 (검색 기록 저장/조회는 여기서만)
+  // ⭐️ 검색 실행 (searchQuery로 검색! /api/search → 토큰 필요 X!)
   const executeSearch = useCallback(
     async (searchQuery: string) => {
       if (!searchQuery.trim()) return;
       setIsLoading(true);
       try {
-        const { data } = await api.get<SearchResult>("/search", {
+        const { data } = await axios.get<SearchResult>("/api/search", {
           params: { query: searchQuery }
         });
         setSearchResults(data);
@@ -151,7 +151,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     }
   };
 
-  // 아이템 클릭 처리 (검색 기록, 연관검색어, 결과)
+  // 아이템 클릭 처리
   const handleItemClick = (index: number) => {
     let clickedItem: string | undefined;
     if (index < searchHistory.length) {
@@ -159,7 +159,6 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     } else if (index < searchHistory.length + suggestions.length) {
       clickedItem = suggestions[index - searchHistory.length].keyword;
     } else {
-      // 결과 클릭은 아래에서 처리
       return;
     }
     setQuery(clickedItem);
@@ -168,7 +167,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
     navigate(`/search?q=${encodeURIComponent(clickedItem)}`);
   };
 
-  // 검색 실행 (Enter, 버튼, 검색 기록/연관검색어 클릭)
+  // 검색 실행
   const handleSearch = () => {
     if (query.trim()) {
       executeSearch(query);
@@ -263,7 +262,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
               ))}
             </div>
           )}
-          {/* 연관검색어(자동완성) */}
+          {/* 연관검색어 */}
           {query && suggestions.length > 0 && (
             <div className="border-b border-gray-100">
               <div className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-50">

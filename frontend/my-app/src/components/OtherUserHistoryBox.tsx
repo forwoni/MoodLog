@@ -40,6 +40,7 @@ interface OtherUserHistoryBoxProps {
   page: number;
   setPage: (page: number) => void;
   totalPages: number;
+  onPlaylistClick: (playlist: Playlist) => void; // ✅ 추가!
 }
 
 const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
@@ -51,6 +52,7 @@ const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
   page,
   setPage,
   totalPages,
+  onPlaylistClick, // ✅ 받기
 }) => {
   return (
     <div className="flex flex-col w-[800px] min-h-[400px] items-center gap-5 pt-10 pb-5 px-0 relative bg-white rounded-lg shadow">
@@ -69,6 +71,8 @@ const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
           <option value="comments">댓글순</option>
         </select>
       </div>
+
+      {/* 게시글 목록 */}
       <div className="w-full flex flex-col items-center gap-4 px-4">
         {loading ? (
           <div className="text-gray-400 text-lg">로딩 중...</div>
@@ -78,10 +82,15 @@ const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
           <div className="text-gray-400 text-lg">게시물 없음</div>
         ) : (
           posts.map((post) => (
-            <OtherUserPostCard key={post.id} {...post} />
+            <OtherUserPostCard
+              key={post.id}
+              {...post}
+              onPlaylistClick={onPlaylistClick} // ✅ 전달!!
+            />
           ))
         )}
       </div>
+
       {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="flex items-center gap-4 mt-4">
@@ -107,5 +116,6 @@ const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
     </div>
   );
 };
+
 
 export default OtherUserHistoryBox;

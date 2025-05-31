@@ -32,6 +32,7 @@ export default function PostPage() {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. 최신 임시글 불러오기
   useEffect(() => {
@@ -104,12 +105,19 @@ export default function PostPage() {
       }
     };
 
-    const interval = setInterval(autoSave, 5000);
-    return () => clearInterval(interval);
+    autoSaveIntervalRef.current = setInterval(autoSave, 5000);
+    return () => {
+      if (autoSaveIntervalRef.current) clearInterval(autoSaveIntervalRef.current);
+    };
   }, [title, content, currentDraftId, currentUser]);
 
-  // 3. 게시 기능 (수정된 부분)
+  // 3. 게시하기 버튼 클릭
   const handlePublish = async () => {
+    // ⭐️ 자동저장 중단!
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current);
+    }
+
     if (!title.trim()) {
       alert("제목을 입력해주세요");
       return;
@@ -124,14 +132,11 @@ export default function PostPage() {
       let postId: number | null = null;
 
       if (currentDraftId) {
-        // Case 1: 임시글을 게시하는 경우 (id를 알고 있음)
         await api.put(`/posts/${currentDraftId}`, payload);
         postId = currentDraftId;
       } else {
-        // Case 2: 새 글을 게시하는 경우 (id를 모름)
         await api.post("/posts", payload);
 
-        // 전체 게시글 목록에서 내 최신 글 찾기
         const { data: posts } = await api.get<Post[]>("/posts");
         const myPosts = posts
           .filter(post => post.authorName === currentUser?.username)
@@ -140,7 +145,7 @@ export default function PostPage() {
         if (myPosts.length > 0) {
           postId = myPosts[0].id;
         }
-      }git 
+      }
 
       if (!postId) {
         alert("게시글 ID를 찾을 수 없습니다.");
@@ -154,6 +159,7 @@ export default function PostPage() {
       if (err.response?.status === 401) logout();
     }
   };
+
   // 에디터 선택 영역 관리
   const saveSelection = () => {
     const selection = window.getSelection();
@@ -180,7 +186,6 @@ export default function PostPage() {
     setItalic(document.queryCommandState("italic"));
   };
 
-  // 툴바 핸들러
   const handleFontChange = (font: string) => {
     saveSelection();
     setFont(font);
@@ -206,7 +211,6 @@ export default function PostPage() {
     handleCommand(`justify${align.charAt(0).toUpperCase() + align.slice(1)}`);
   };
 
-  // 본문 입력 핸들러
   const handleBodyInput = () => {
     setContent(editorRef.current?.innerHTML || "");
   };
@@ -219,7 +223,6 @@ export default function PostPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 헤더 */}
       <div className="w-full bg-white py-4 px-10 shadow-md flex justify-start items-center">
         <img
           src={logo}
@@ -230,7 +233,6 @@ export default function PostPage() {
       </div>
 
       <div className="max-w-[1200px] mx-auto pt-6">
-        {/* 툴바 */}
         <div className="flex items-center border-b border-gray-200 py-2 px-2 bg-white">
           <FontDropdown value={font} onChange={handleFontChange} />
           <input
@@ -272,7 +274,6 @@ export default function PostPage() {
           </button>
         </div>
 
-        {/* 본문 에디터 */}
         <div className="flex justify-center mt-6">
           <div className="w-[600px] min-h-[900px] border rounded bg-white flex flex-col">
             <input

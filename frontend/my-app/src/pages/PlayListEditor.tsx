@@ -1,86 +1,101 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import x_icon from "../assets/x_icon.svg";
+import axios from "axios";
+import { useUser } from "../contexts/UserContext";
 
-const dummySongs = Array.from({ length: 6 }).map((_, i) => ({
-  id: i + 1,
-  artist: "아티스트 명",
-  title: "노래 제목",
-}));
+interface Track {
+  trackName: string;
+  artist: string;
+  albumImage: string;
+  spotifyUrl: string;
+}
 
 export default function PlayListEditor() {
-  const [songs, setSongs] = useState(dummySongs);
+  const navigate = useNavigate();
+  const { currentUser } = useUser();
+  const [tracks, setTracks] = useState<Track[]>([]);
 
-  const handleDelete = (id: number) => {
-    setSongs(songs.filter(song => song.id !== id));
-  };
+  useEffect(() => {
+    const fetchPlaylistFromFirstPost = async () => {
+      try {
+        if (!currentUser?.username) {
+          console.warn("사용자 이름이 없습니다.");
+          return;
+        }
 
-  const handleAdd = () => {
-    setSongs([
-      ...songs,
-      { id: Date.now(), artist: "아티스트 명", title: "노래 제목" },
-    ]);
-  };
+        const res = await axios.get(`/api/users/${currentUser.username}/posts`, {
+          params: { sort: "recent", page: 0, size: 1 },
+        });
+
+        console.log("응답 데이터 확인 👉", res.data.content?.[0]?.playlist);
+
+        const firstPost = res.data.content?.[0];
+        if (firstPost?.playlist) {
+          const convertedTracks: Track[] = firstPost.playlist.tracks.map((track: any) => ({
+            trackName: track.trackName,
+            artist: track.artist,
+            albumImage: track.albumImage, // camelCase로!
+            spotifyUrl: track.spotifyUrl,
+          }));
+          setTracks(convertedTracks);
+        } else {
+          setTracks([]);
+        }
+      } catch (err) {
+        console.error("플레이리스트 조회 실패", err);
+        setTracks([]);
+      }
+    };
+
+    fetchPlaylistFromFirstPost();
+  }, [currentUser]);
 
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-black/40">
-      <div className="w-[700px] min-h-[1100px] bg-white rounded-2xl shadow-lg p-8 flex flex-col relative">
-        {/* 상단 우측: 노래 추가, 닫기 버튼 */}
+      <div className="w-[700px] min-h-[700px] bg-white rounded-2xl shadow-lg p-8 flex flex-col relative">
+        {/* 상단 우측: 닫기 버튼 */}
         <div className="flex justify-end items-center mb-6">
-          <button
-            onClick={handleAdd}
-            className="border border-gray-300 rounded px-4 py-2 text-sm font-medium mr-4 hover:bg-gray-100"
-          >
-            노래 추가
-          </button>
-          <button onClick={() => window.history.back()}>
+          <button onClick={() => navigate(-1)}>
             <img src={x_icon} alt="닫기" className="w-6 h-6" />
           </button>
         </div>
-        {/* 곡 리스트: 스크롤 없음, 6개가 한 화면에 모두 보임 */}
-        <div className="flex flex-col gap-4 mb-10">
-          {songs.map(song => (
-            <div
-              key={song.id}
-              className="flex items-center bg-white border border-gray-200 rounded-md px-4 py-5 relative min-h-[110px]"
-              style={{ height: 110 }}
-            >
-              {/* 썸네일 */}
-              <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center mr-6 text-base text-gray-400 leading-tight text-center select-none">
-                <span>
-                  노래<br />이미지
-                </span>
-              </div>
-              {/* 곡 정보 */}
-              <div className="flex flex-col flex-1">
-                <span className="text-sm text-gray-700">{song.artist}</span>
-                <span className="text-base font-medium text-gray-900">{song.title}</span>
-                <span className="text-lg mt-1">🎵</span>
-              </div>
-              {/* 삭제(X) 버튼 */}
-              <button
-                onClick={() => handleDelete(song.id)}
-                className="ml-4 text-gray-400 hover:text-red-500"
-                aria-label="삭제"
+
+        {tracks.length === 0 ? (
+          <div className="text-center text-gray-500">플레이리스트가 없습니다.</div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {tracks.map((track, i) => (
+              <div
+                key={i}
+                className="flex items-center bg-white border border-gray-200 rounded-md px-4 py-5 cursor-pointer hover:bg-gray-50"
+                onClick={() => window.open(track.spotifyUrl, "_blank")}
               >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-        {/* 페이지네이션: 리스트와 동일한 간격 */}
-        <div className="flex justify-center items-center gap-2">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <button
-              key={i}
-              className="w-8 h-8 flex items-center justify-center rounded text-gray-700 hover:bg-gray-200"
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button className="ml-3 text-gray-700 hover:underline flex items-center">
-            다음 <span className="ml-1">&gt;</span>
-          </button>
-        </div>
+                {/* 앨범 이미지 */}
+                <div className="w-24 h-24 bg-gray-100 rounded mr-6 overflow-hidden">
+                  {track.albumImage ? (
+                    <img
+                      src={track.albumImage}
+                      alt="앨범 이미지"
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-base text-gray-400 text-center leading-tight select-none">
+                      노래<br />이미지
+                    </div>
+                  )}
+                </div>
+
+                {/* 곡 정보 */}
+                <div className="flex flex-col flex-1">
+                  <span className="text-sm text-gray-700">{track.artist}</span>
+                  <span className="text-base font-medium text-gray-900">{track.trackName}</span>
+                  <span className="text-lg mt-1">🎵</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
