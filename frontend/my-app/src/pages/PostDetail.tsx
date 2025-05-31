@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { HeaderBox } from "../layouts/headerBox";
-import { UserPlayListBox } from "../components/UserPlayListBox";
+import UserPlayListBox from "../components/UserPlayListBox";
 import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
 import api from "../services/axiosInstance";
 

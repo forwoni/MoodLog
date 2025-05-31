@@ -24,7 +24,7 @@ const UserPlayListBox: React.FC<Props> = ({ playlist, showEditButton = true }) =
 
   return (
     <div
-      className="w-60 bg-white rounded-lg shadow border p-3 relative cursor-pointer"
+      className="w-60 bg-white rounded-2xl shadow-md border border-gray-200 p-4 cursor-pointer relative"
       onClick={() => navigate("/playlisteditor")}
     >
       {showEditButton && (
@@ -43,10 +43,10 @@ const UserPlayListBox: React.FC<Props> = ({ playlist, showEditButton = true }) =
           <img
             src={firstTrackImage}
             alt="앨범 커버"
-            className="w-full h-40 object-cover rounded mb-3"
+            className="w-full h-40 object-cover rounded-lg mb-3"
           />
-          <div className="text-sm text-gray-700">{playlist.tracks[0]?.trackName}</div>
-          <div className="text-base font-medium">{playlist.name}</div>
+          <div className="text-sm text-gray-700 truncate">{playlist.tracks[0]?.trackName}</div>
+          <div className="text-base font-semibold text-gray-800 truncate">{playlist.name}</div>
           <div className="text-xs text-gray-500 mt-1">🎵 {playlist.tracks.length}곡</div>
         </>
       ) : (
@@ -57,4 +57,5 @@ const UserPlayListBox: React.FC<Props> = ({ playlist, showEditButton = true }) =
     </div>
   );
 };
+
 export default UserPlayListBox;

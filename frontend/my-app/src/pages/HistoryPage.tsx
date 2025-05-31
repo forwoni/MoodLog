@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
-import SearchBox from "../components/searchBox";
+import SearchBox from "../components/SearchBox";
 import HistoryBox from "../components/HistoryBox";
 import PlaylistModal from "../components/PlaylistModal";
 import { useUser } from "../contexts/UserContext";
-import UserPlayListBox  from "../components/UserPlayListBox";
+import UserPlayListBox from "../components/UserPlayListBox";
+
 // 타입 정의
 interface PlaylistTrack {
   trackName: string;
@@ -39,7 +40,6 @@ interface Post {
   comments: Comment[];
   playlist?: Playlist;
 }
-
 interface Page<T> {
   content: T[];
   totalPages: number;
@@ -97,12 +97,19 @@ export default function HistoryPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
+      {/* 헤더 */}
       <HeaderBox />
 
-      <main className="max-w-[1440px] mx-auto mt-[102px] flex gap-8 px-8">
-        {/* 왼쪽: 프로필 & 플레이리스트 */}
-        <aside className="flex flex-col w-[300px] gap-4">
-          <UserInfoBox />
+      {/* 유저 인포 영역 */}
+      <div className="max-w-[1440px] w-full mx-auto px-8 mt-[102px]">
+        <UserInfoBox />
+      </div>
+
+      {/* 메인 콘텐츠: 좌-우 1:1 레이아웃 */}
+      <main className="grid grid-cols-[1.2fr_1fr] gap-6 max-w-[1440px] w-full mx-auto px-8 mt-8">
+        {/* 좌측: 플레이리스트 */}
+        <aside className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">나의 플레이리스트</h2>
           <UserPlayListBox
             showEditButton={true}
             playlist={posts.find((p) => p.playlist)?.playlist || null}
@@ -110,19 +117,21 @@ export default function HistoryPage() {
           />
         </aside>
 
-        {/* 오른쪽: 게시글 */}
-        <section className="flex-1 flex flex-col gap-6">
+        {/* 우측: 게시글 */}
+        <section className="flex flex-col gap-4">
           <SearchBox />
 
-          {/* 정렬 */}
-          <div className="flex justify-end">
+          {/* 정렬 기준 */}
+          <div className="flex justify-end items-center gap-2 text-sm text-gray-500">
+            <label htmlFor="sort">정렬 기준</label>
             <select
+              id="sort"
               value={sort}
               onChange={(e) => {
-                setSort(e.target.value as any);
+                setSort(e.target.value as typeof sort);
                 setPage(0);
               }}
-              className="border rounded-md px-3 py-1 text-sm"
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:ring-purple-400 focus:border-purple-400"
             >
               <option value="recent">최신순</option>
               <option value="likes">좋아요순</option>
@@ -130,26 +139,26 @@ export default function HistoryPage() {
             </select>
           </div>
 
-          <HistoryBox
-            posts={posts}
-            loading={loading}
-            error={error}
-            sort={sort}
-            setSort={setSort}
-            page={page}
-            setPage={setPage}
-            totalPages={totalPages}
-            onPlaylistClick={openModal}
-          />
+          {/* 게시글 목록 */}
+          <div className="flex flex-col gap-4">
+            <HistoryBox
+              posts={posts}
+              loading={loading}
+              error={error}
+              sort={sort}
+              setSort={setSort}
+              page={page}
+              setPage={setPage}
+              totalPages={totalPages}
+              onPlaylistClick={openModal}
+            />
+          </div>
         </section>
       </main>
 
       {/* 모달 */}
       {showModal && selectedPlaylist && (
-        <PlaylistModal
-          onClose={closeModal}
-          tracks={selectedPlaylist.tracks}
-        />
+        <PlaylistModal onClose={closeModal} tracks={selectedPlaylist.tracks} />
       )}
     </div>
   );

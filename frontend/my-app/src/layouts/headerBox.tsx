@@ -14,7 +14,7 @@ export const HeaderBox = ({
   const navigate = useNavigate();
 
   return (
-    <header className="fixed top-0 left-1/2 -translate-x-1/2 w-[1440px] h-[102px] bg-white z-50 shadow flex items-center justify-between px-8">
+    <header className="fixed top-0 left-1/2 -translate-x-1/2 max-w-[1440px] w-full mx-auto h-[102px] bg-white z-50 shadow flex items-center justify-between px-8">
       <div className="flex items-center">
         <img
           className="w-[65px] h-[49px] object-cover cursor-pointer"

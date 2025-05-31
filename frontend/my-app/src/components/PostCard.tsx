@@ -9,21 +9,27 @@ const PostCard: React.FC<any> = ({
   playlist,
   onPlaylistClick,
 }) => (
-  <div className="flex flex-col bg-white border rounded p-4 shadow">
-    <h3 className="font-semibold">{title}</h3>
-    <p className="text-sm text-gray-600 mt-1">{content.slice(0, 100)}...</p>
-    <div className="flex justify-between items-center text-xs text-gray-500 mt-2">
-      <span>{new Date(createdAt).toLocaleString()}</span>
-      <div>❤️ {likeCount} · 💬 {comments.length}</div>
+  <div className="flex flex-col bg-white rounded-2xl shadow-md border border-gray-200 p-4 gap-2 hover:shadow-lg transition-shadow duration-300">
+    <h3 className="text-lg font-semibold text-gray-800 truncate">{title}</h3>
+    <p className="text-sm text-gray-600 line-clamp-2">{content}</p>
+
+    <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+      <span>{new Date(createdAt).toLocaleDateString()}</span>
+      <div className="flex gap-2 items-center">
+        <span>❤️ {likeCount}</span>
+        <span>💬 {comments.length}</span>
+      </div>
     </div>
+
     {playlist && (
       <button
         onClick={() => onPlaylistClick(playlist)}
-        className="mt-2 text-xs text-blue-500 underline self-start"
+        className="mt-2 px-3 py-1 text-xs rounded-full bg-purple-100 text-purple-700 font-medium self-start hover:bg-purple-200 transition-colors"
       >
         플레이리스트 보기
       </button>
     )}
   </div>
 );
+
 export default PostCard;
