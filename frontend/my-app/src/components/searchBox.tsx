@@ -33,7 +33,7 @@ interface SearchBoxProps {
 }
 
 const SearchBox: React.FC<SearchBoxProps> = ({
-  className = "relative w-[1200px]",
+  className = "relative w-full max-w-3xl mx-auto",
   placeholder = "검색어를 입력하세요"
 }) => {
   const [query, setQuery] = useState("");
@@ -323,25 +323,29 @@ const SearchBox: React.FC<SearchBoxProps> = ({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
-          className="w-full px-24 py-6 pr-16 rounded-full outline-none text-2xl bg-white placeholder-gray-400 shadow focus:ring-2 focus:ring-blue-500"
+          className="w-full px-14 py-4 rounded-full outline-none text-lg bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-lg focus:ring-2 focus:ring-purple-500 transition-shadow"
         />
+        <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
+          {query ? (
+            <X
+              className="text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"
+              size={20}
+              onClick={() => {
+                setQuery("");
+                setSearchResults(null);
+                setSuggestions([]);
+                inputRef.current?.focus();
+              }}
+            />
+          ) : (
+            <Search className="text-gray-400" size={20} />
+          )}
+        </div>
         <Search
-          className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
-          size={28}
+          className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer hover:text-purple-600 transition-colors"
+          size={20}
           onClick={handleSearch}
         />
-        {query && (
-          <X
-            className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700"
-            size={28}
-            onClick={() => {
-              setQuery("");
-              setSearchResults(null);
-              setSuggestions([]);
-              inputRef.current?.focus();
-            }}
-          />
-        )}
       </div>
       {showDropdown && (
         <div className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50">

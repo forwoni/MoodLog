@@ -1,9 +1,20 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 import { useUser } from "../contexts/UserContext";
+import { User, Heart, MessageCircle, Music, Calendar, UserMinus, UserPlus } from 'lucide-react';
+
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  likeCount: number;
+  commentCount: number;
+  hasPlaylist: boolean;
+}
 
 interface FollowUser {
   id: number;
@@ -11,6 +22,7 @@ interface FollowUser {
   followingUsername: string;
   followingProfileImageUrl: string;
   createdAt: string;
+  recentPosts?: Post[];
 }
 
 interface Page<T> {
@@ -22,56 +34,124 @@ interface Page<T> {
 function UserCard({
   user,
   type,
-  onDelete,
+  onToggleFollow,
+  isFollowing,
 }: {
   user: FollowUser;
   type: "following" | "follower";
-  onDelete?: () => void;
+  onToggleFollow: () => void;
+  isFollowing: boolean;
 }) {
   const navigate = useNavigate();
-  const displayName = type === "following"
-    ? user.followingUsername
-    : user.followerUsername;
+  const displayName = type === "following" ? user.followingUsername : user.followerUsername;
+  const [isHovered, setIsHovered] = useState(false);
 
-  // 더블클릭 시 상대방 히스토리 페이지로 이동
-  const handleDoubleClick = (e: React.MouseEvent) => {
+  const handleNavigateToProfile = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate(`/user/${displayName}/posts`);
   };
 
-  const handleClick = () => {
-    // 단일 클릭 동작 필요시 구현
-  };
-
   return (
     <div
-      className="flex items-center justify-between bg-white border rounded-lg px-6 py-6 mb-6 cursor-pointer transition hover:bg-gray-50"
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
+      className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-purple-100 overflow-hidden transition-all duration-300 hover:shadow-md hover:border-purple-200"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-center gap-6">
-        <img
-          src={user.followingProfileImageUrl || "/default-profile.png"}
-          alt={displayName}
-          className="w-16 h-16 rounded-full object-cover"
-        />
-        <div>
-          <div className="text-lg font-medium text-gray-800">{displayName}</div>
-          <div className="text-sm text-gray-500">
-            {new Date(user.createdAt).toLocaleDateString()}
+      {/* 상단 프로필 영역 */}
+      <div className="p-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="relative group cursor-pointer" onClick={handleNavigateToProfile}>
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-blue-100 border-2 border-white shadow-md">
+              {user.followingProfileImageUrl ? (
+                <img
+                  src={user.followingProfileImageUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <User size={32} className="text-purple-300" />
+                </div>
+              )}
+            </div>
+            <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/10 transition-colors" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+              {displayName}
+            </h3>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Calendar size={14} />
+              <span>팔로우: {new Date(user.createdAt).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
-      </div>
-      {type === "following" && onDelete && (
+        
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onDelete();
+            onToggleFollow();
           }}
-          className="text-2xl text-gray-400 hover:text-gray-600 transition"
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+            isFollowing
+              ? 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'
+              : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600'
+          }`}
         >
-          ×
+          {isFollowing ? (
+            <>
+              <UserMinus size={18} />
+              <span>언팔로우</span>
+            </>
+          ) : (
+            <>
+              <UserPlus size={18} />
+              <span>팔로우</span>
+            </>
+          )}
         </button>
+      </div>
+
+      {/* 최근 게시글 미리보기 */}
+      {user.recentPosts && user.recentPosts.length > 0 && (
+        <div className="border-t border-purple-50">
+          <div className="p-4">
+            <h4 className="text-sm font-medium text-gray-600 mb-2">최근 게시글</h4>
+            <div className="space-y-2">
+              {user.recentPosts.map((post) => (
+                <div
+                  key={post.id}
+                  onClick={() => navigate(`/postdetail/${post.id}`)}
+                  className="p-3 rounded-lg bg-gray-50 hover:bg-purple-50 transition-colors cursor-pointer"
+                >
+                  <h5 className="text-sm font-medium text-gray-700 mb-1 line-clamp-1">
+                    {post.title}
+                  </h5>
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={12} />
+                      {new Date(post.createdAt).toLocaleDateString()}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Heart size={12} />
+                      {post.likeCount}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageCircle size={12} />
+                      {post.commentCount}
+                    </span>
+                    {post.hasPlaylist && (
+                      <span className="flex items-center gap-1 text-purple-500">
+                        <Music size={12} />
+                        플레이리스트
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -87,192 +167,165 @@ export default function FollowManagementPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [refreshCounter, setRefreshCounter] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadingRef = useRef<HTMLDivElement>(null);
 
-  // 팔로우 관련 이벤트 리스너들
+  // 무한 스크롤 설정
   useEffect(() => {
-    const handleFollowUpdate = () => {
-      console.log("[FollowManagementPage] 팔로우 상태 업데이트 이벤트 감지");
-      setRefreshCounter(prev => {
-        console.log("[FollowManagementPage] refreshCounter 업데이트:", prev, "->", prev + 1);
-        return prev + 1;
-      });
+    const options = {
+      root: null,
+      rootMargin: '20px',
+      threshold: 1.0
     };
 
-    console.log("[FollowManagementPage] 이벤트 리스너 등록");
-    window.addEventListener("followUpdated", handleFollowUpdate);
-    
+    observerRef.current = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasMore && !loading) {
+        setCurrentPage(prev => prev + 1);
+      }
+    }, options);
+
+    if (loadingRef.current) {
+      observerRef.current.observe(loadingRef.current);
+    }
+
     return () => {
-      console.log("[FollowManagementPage] 이벤트 리스너 제거");
-      window.removeEventListener("followUpdated", handleFollowUpdate);
-    };
-  }, []);
-
-  // 초기 로드 및 새로고침 시 양쪽 데이터 모두 가져오기
-  useEffect(() => {
-    const fetchBothCounts = async () => {
-      try {
-        setLoading(true);
-        console.log("[FollowManagementPage] 데이터 새로고침 시작 - refreshCounter:", refreshCounter);
-        
-        const [followingsRes, followersRes] = await Promise.all([
-          api.get<Page<FollowUser>>("/social/followings", {
-            params: { page: 0, size: 6, timestamp: Date.now() }
-          }),
-          api.get<Page<FollowUser>>("/social/followers", {
-            params: { page: 0, size: 6, timestamp: Date.now() }
-          })
-        ]);
-
-        console.log("[FollowManagementPage] API 응답:", {
-          followings: followingsRes.data,
-          followers: followersRes.data
-        });
-
-        const followingsList = followingsRes.data.content || [];
-        const followersList = followersRes.data.content || [];
-        const followingTotal = followingsRes.data.totalElements || 0;
-        const followerTotal = followersRes.data.totalElements || 0;
-
-        setFollowings(followingsList);
-        setFollowers(followersList);
-        setFollowingCount(followingTotal);
-        setFollowerCount(followerTotal);
-        setTotalPages(activeTab === "following" ? followingsRes.data.totalPages : followersRes.data.totalPages);
-        
-        console.log("[FollowManagementPage] 상태 업데이트 완료:", {
-          followingCount: followingTotal,
-          followerCount: followerTotal,
-          followings: followingsList,
-          followers: followersList
-        });
-      } catch (error) {
-        console.error('[FollowManagementPage] 데이터 로드 실패:', error);
-      } finally {
-        setLoading(false);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
       }
     };
+  }, [hasMore, loading]);
 
-    fetchBothCounts();
-  }, [refreshCounter, activeTab]);
-
-  // 페이지 변경 시 해당 탭의 데이터만 업데이트
-  const fetchUsers = useCallback(async () => {
-    if (currentPage === 0) return; // 첫 페이지는 이미 로드됨
-
+  const fetchUsers = useCallback(async (page: number) => {
     try {
       setLoading(true);
       const endpoint = activeTab === "following" ? "/social/followings" : "/social/followers";
       const res = await api.get<Page<FollowUser>>(endpoint, {
         params: {
-          page: currentPage,
-          size: 6
+          page,
+          size: 10,
+          includeRecentPosts: true
         }
       });
 
-      const list = res.data.content || [];
+      const newUsers = res.data.content || [];
+      
       if (activeTab === "following") {
-        setFollowings(list);
+        setFollowings(prev => page === 0 ? newUsers : [...prev, ...newUsers]);
       } else {
-        setFollowers(list);
+        setFollowers(prev => page === 0 ? newUsers : [...prev, ...newUsers]);
       }
+      
       setTotalPages(res.data.totalPages);
+      setHasMore(page < res.data.totalPages - 1);
+      
+      if (page === 0) {
+        setFollowingCount(res.data.totalElements);
+        setFollowerCount(res.data.totalElements);
+      }
     } catch (error) {
-      console.error('목록 조회 실패:', error);
-      alert('목록 조회에 실패했습니다.');
+      console.error('사용자 목록 조회 실패:', error);
     } finally {
       setLoading(false);
     }
-  }, [activeTab, currentPage]);
+  }, [activeTab]);
 
   useEffect(() => {
-    if (currentPage !== 0) {
-      fetchUsers();
-    }
-  }, [fetchUsers, currentPage]);
+    setCurrentPage(0);
+    fetchUsers(0);
+  }, [activeTab]);
 
-  const handleDeleteFollowing = async (username: string) => {
+  useEffect(() => {
+    if (currentPage > 0) {
+      fetchUsers(currentPage);
+    }
+  }, [currentPage, fetchUsers]);
+
+  const handleToggleFollow = async (username: string, isFollowing: boolean) => {
     try {
-      await api.delete("/social/unfollow", { data: { followingUsername: username } });
-      setRefreshCounter(prev => prev + 1);
+      if (isFollowing) {
+        await api.delete("/social/unfollow", { data: { followingUsername: username } });
+      } else {
+        await api.post("/social/follow", { followingUsername: username });
+      }
+      // 현재 페이지 새로고침
+      fetchUsers(0);
     } catch (error) {
-      console.error('언팔로우 실패:', error);
-      alert('이웃 삭제에 실패했습니다.');
+      console.error('팔로우 상태 변경 실패:', error);
     }
   };
 
   if (!currentUser) {
     return (
-      <div className="w-[1440px] mx-auto flex flex-col items-center bg-white min-h-screen">
+      <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">
         <HeaderBox />
-        <div className="mt-[120px] text-xl">로그인이 필요합니다</div>
+        <div className="max-w-[1200px] mx-auto px-6 pt-24">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-gray-700">로그인이 필요합니다</h2>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-[1440px] mx-auto flex flex-col items-center bg-white min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">
       <HeaderBox />
-
-      <div className="w-full flex justify-center mt-[102px]">
-        <UserInfoBox />
-      </div>
-
-      <div className="w-[1100px] mx-auto mt-12">
-        <div className="flex gap-4 mb-6 border-b">
-          <button
-            onClick={() => {
-              setActiveTab("following");
-              setCurrentPage(0);
-            }}
-            className={`px-4 py-2 ${
-              activeTab === "following"
-                ? "border-b-2 border-purple-600 text-purple-600"
-                : "text-gray-500"
-            }`}
-          >
-            팔로잉 ({followingCount})
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("follower");
-              setCurrentPage(0);
-            }}
-            className={`px-4 py-2 ${
-              activeTab === "follower"
-                ? "border-b-2 border-purple-600 text-purple-600"
-                : "text-gray-500"
-            }`}
-          >
-            팔로워 ({followerCount})
-          </button>
+      
+      <div className="max-w-[1200px] mx-auto px-6 pt-24">
+        {/* 사용자 정보 */}
+        <div className="mb-12">
+          <UserInfoBox />
         </div>
 
-        {loading ? (
-          <div className="text-center py-8">로딩 중...</div>
-        ) : (
-          <>
-            <div className="space-y-4">
-              {(activeTab === "following" ? followings : followers).map((user) => (
-                <UserCard
-                  key={user.id}
-                  user={user}
-                  type={activeTab}
-                  onDelete={
-                    activeTab === "following"
-                      ? () => handleDeleteFollowing(user.followingUsername)
-                      : undefined
-                  }
-                />
-              ))}
-            </div>
-            {(activeTab === "following" ? followings : followers).length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                {activeTab === "following" ? "팔로잉" : "팔로워"}가 없습니다
-              </div>
-            )}
-          </>
-        )}
+        {/* 탭 메뉴 */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-purple-100 p-4 mb-6">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab("following")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === "following"
+                  ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              팔로잉 ({followingCount})
+            </button>
+            <button
+              onClick={() => setActiveTab("follower")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === "follower"
+                  ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              팔로워 ({followerCount})
+            </button>
+          </div>
+        </div>
+
+        {/* 사용자 목록 */}
+        <div className="space-y-4">
+          {(activeTab === "following" ? followings : followers).map((user) => (
+            <UserCard
+              key={user.id}
+              user={user}
+              type={activeTab}
+              onToggleFollow={() => handleToggleFollow(
+                activeTab === "following" ? user.followingUsername : user.followerUsername,
+                activeTab === "following"
+              )}
+              isFollowing={activeTab === "following"}
+            />
+          ))}
+        </div>
+
+        {/* 로딩 상태 */}
+        <div ref={loadingRef} className="py-8 text-center">
+          {loading && <div className="text-gray-500">로딩 중...</div>}
+          {!hasMore && <div className="text-gray-500">더 이상 표시할 항목이 없습니다</div>}
+        </div>
       </div>
     </div>
   );

@@ -1,24 +1,29 @@
 import React from "react";
 import OtherUserPostCard from "./OtherUserPostCard";
+import { ChevronLeft, ChevronRight, ListFilter } from "lucide-react";
 
 // 타입 정의 (Post 등)
 interface PlaylistTrack {
   trackName: string;
   artist: string;
   spotifyUrl: string;
+  albumImage?: string;
 }
+
 interface Playlist {
   id: number;
   name: string;
   description: string;
   tracks: PlaylistTrack[];
 }
+
 interface Comment {
   id: number;
   content: string;
   authorUsername: string;
   createdAt: string;
 }
+
 interface Post {
   id: number;
   title: string;
@@ -31,6 +36,7 @@ interface Post {
   comments: Comment[];
   playlist?: Playlist;
 }
+
 interface OtherUserHistoryBoxProps {
   posts: Post[];
   loading: boolean;
@@ -40,7 +46,7 @@ interface OtherUserHistoryBoxProps {
   page: number;
   setPage: (page: number) => void;
   totalPages: number;
-  onPlaylistClick: (playlist: Playlist) => void; // ✅ 추가!
+  onPlaylistClick: (playlist: Playlist) => void;
 }
 
 const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
@@ -52,70 +58,95 @@ const OtherUserHistoryBox: React.FC<OtherUserHistoryBoxProps> = ({
   page,
   setPage,
   totalPages,
-  onPlaylistClick, // ✅ 받기
+  onPlaylistClick,
 }) => {
   return (
-    <div className="flex flex-col w-[800px] min-h-[400px] items-center gap-5 pt-10 pb-5 px-0 relative bg-white rounded-lg shadow">
-      {/* 정렬 선택 */}
-      <div className="flex w-[570px] items-center justify-end gap-2 relative">
-        <select
-          value={sort}
-          onChange={(e) => {
-            setSort(e.target.value as typeof sort);
-            setPage(0);
-          }}
-          className="w-[123px] h-[30px] rounded-md border border-black/30 pl-2 pr-6"
-        >
-          <option value="recent">최신순</option>
-          <option value="likes">좋아요순</option>
-          <option value="comments">댓글순</option>
-        </select>
-      </div>
+    <div className="max-w-[1200px] mx-auto px-8 py-8">
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-purple-100">
+        {/* 상단 정렬 선택 */}
+        <div className="flex items-center justify-between mb-6 border-b border-purple-100 pb-4">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+            게시글 목록
+          </h2>
+          <div className="flex items-center gap-2">
+            <ListFilter size={20} className="text-purple-500" />
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as typeof sort);
+                setPage(0);
+              }}
+              className="px-4 py-2 rounded-lg border border-purple-200 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 backdrop-blur-sm"
+            >
+              <option value="recent">최신순</option>
+              <option value="likes">좋아요순</option>
+              <option value="comments">댓글순</option>
+            </select>
+          </div>
+        </div>
 
-      {/* 게시글 목록 */}
-      <div className="w-full flex flex-col items-center gap-4 px-4">
-        {loading ? (
-          <div className="text-gray-400 text-lg">로딩 중...</div>
-        ) : error ? (
-          <div className="text-red-500 text-lg">{error}</div>
-        ) : posts.length === 0 ? (
-          <div className="text-gray-400 text-lg">게시물 없음</div>
-        ) : (
-          posts.map((post) => (
+        {/* 게시글 목록 */}
+        <div className="space-y-4">
+          {loading && (
+            <div className="text-center py-8">
+              <div className="text-lg text-gray-500">로딩 중...</div>
+            </div>
+          )}
+          
+          {error && (
+            <div className="text-center py-8">
+              <div className="text-lg text-red-500">{error}</div>
+            </div>
+          )}
+          
+          {!loading && !error && posts.length === 0 && (
+            <div className="text-center py-8">
+              <div className="text-lg text-gray-500">게시글이 없습니다.</div>
+            </div>
+          )}
+          
+          {posts.map((post) => (
             <OtherUserPostCard
               key={post.id}
               {...post}
-              onPlaylistClick={onPlaylistClick} // ✅ 전달!!
+              onPlaylistClick={onPlaylistClick}
             />
-          ))
+          ))}
+        </div>
+
+        {/* 페이지네이션 */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-8 pt-4 border-t border-purple-100">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-purple-200 text-purple-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-50 transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-medium bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+                {page + 1}
+              </span>
+              <span className="text-gray-400">/</span>
+              <span className="text-lg text-gray-600">
+                {totalPages}
+              </span>
+            </div>
+            
+            <button
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page === totalPages - 1}
+              className="flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-purple-200 text-purple-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-50 transition-colors"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
         )}
       </div>
-
-      {/* 페이지네이션 */}
-      {totalPages > 1 && (
-        <div className="flex items-center gap-4 mt-4">
-          <button
-            onClick={() => setPage(Math.max(0, page - 1))}
-            disabled={page === 0}
-            className="disabled:opacity-50"
-          >
-            &lt;
-          </button>
-          <span>
-            {page + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-            disabled={page === totalPages - 1}
-            className="disabled:opacity-50"
-          >
-            &gt;
-          </button>
-        </div>
-      )}
     </div>
   );
 };
-
 
 export default OtherUserHistoryBox;

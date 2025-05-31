@@ -1,300 +1,264 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import logo from "../assets/moodlog_logo_transparent.png";
-import { Bell, User, X } from "lucide-react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { HeaderBox } from "../layouts/headerBox";
+import { Heart, MessageCircle, Music, ChevronLeft, ChevronRight } from "lucide-react";
 import api from "../services/axiosInstance";
-import { getNotifications, markNotificationAsRead } from '../services/notificationService';
+import PlaylistModal from "../components/PlaylistModal";
 
-interface Notification {
-  id: number;
-  message: string;
-  read: boolean;
-  timestamp: string;
-  link?: string;
+interface PlaylistTrack {
+  trackName: string;
+  artist: string;
+  spotifyUrl: string;
+  albumImage?: string;
 }
 
-const sortOptions = [
-  { label: "좋아요 많은 순", value: "likes" },
-  { label: "댓글 많은 순", value: "comments" },
-];
+interface Playlist {
+  id: number;
+  name: string;
+  description: string;
+  tracks: PlaylistTrack[];
+}
 
-function PopularPostsPage() {
-  const [posts, setPosts] = useState<any[]>([]);
-  const [sortBy, setSortBy] = useState("likes");
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const postsPerPage = 5;
+interface Comment {
+  id: number;
+  content: string;
+  authorUsername: string;
+  createdAt: string;
+}
 
-  const notifRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+  viewCount: number;
+  likeCount: number;
+  comments: Comment[];
+  playlist?: Playlist;
+}
+
+export default function PopularPostsPage() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [sort, setSort] = useState<"latest" | "likes" | "comments">("latest");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setShowNotifications(false);
-      }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
-        setShowProfileMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const openModal = (playlist: Playlist, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedPlaylist(playlist);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setSelectedPlaylist(null);
+    setShowModal(false);
+  };
+
+  const handlePostClick = (postId: number) => {
+    navigate(`/postdetail/${postId}`);
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get("/api/posts");
-        setPosts(response.data);
+        setLoading(true);
+        setError(null);
+        const response = await api.get<Post[]>("/posts", {
+          params: { 
+            sort,
+            page,
+            size: 10
+          }
+        });
+        
+        // 전체 데이터를 받아서 정렬 및 페이지네이션 처리
+        let allPosts = response.data;
+        
+        // 정렬 적용
+        if (sort === "latest") {
+          allPosts = allPosts.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        } else if (sort === "likes") {
+          allPosts = allPosts.sort((a, b) => b.likeCount - a.likeCount);
+        } else if (sort === "comments") {
+          allPosts = allPosts.sort((a, b) => b.comments.length - a.comments.length);
+        }
+
+        const totalItems = allPosts.length;
+        const totalPages = Math.ceil(totalItems / 10);
+        
+        const startIndex = page * 10;
+        const endIndex = Math.min(startIndex + 10, totalItems);
+        const currentPagePosts = allPosts.slice(startIndex, endIndex);
+        
+        setPosts(currentPagePosts);
+        setTotalPages(totalPages);
       } catch (error) {
         console.error("인기 게시글 불러오기 실패:", error);
+        setError("게시글을 불러오는 중 오류가 발생했습니다.");
+        setPosts([]);
+        setTotalPages(0);
+      } finally {
+        setLoading(false);
       }
     };
     fetchPosts();
-  }, []);
-
-  // 알림 목록 불러오기
-  const fetchNotifications = async () => {
-    try {
-      const data = await getNotifications();
-      setNotifications(data);
-    } catch (error) {
-      console.error("알림 조회 실패:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-
-    // 30초마다 알림 갱신
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // 알림 클릭 시 읽음 처리 및 이동
-  const handleNotificationClick = async (id: number, link?: string) => {
-    try {
-      await markNotificationAsRead(id);
-      await fetchNotifications();
-      if (link) navigate(link);
-    } catch (error) {
-      console.error('알림 읽음 처리 실패:', error);
-    }
-  };
-
-  // 좋아요 1개 이상, 댓글 1개 이상 필터링 후 정렬
-  const getSortedPosts = () => {
-    if (sortBy === "likes") {
-      const filtered = posts.filter(p => (p.likeCount ?? 0) >= 1);
-      return filtered
-        .sort((a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0))
-        .slice(0, 10);
-    }
-    if (sortBy === "comments") {
-      // comments가 배열이면
-      const filtered = posts.filter(p =>
-        Array.isArray(p.comments)
-          ? p.comments.length >= 1
-          : (p.commentCount ?? 0) >= 1
-      );
-      return filtered
-        .sort((a, b) => {
-          const aCount = Array.isArray(a.comments)
-            ? a.comments.length
-            : a.commentCount ?? 0;
-          const bCount = Array.isArray(b.comments)
-            ? b.comments.length
-            : b.commentCount ?? 0;
-          return bCount - aCount;
-        })
-        .slice(0, 10);
-    }
-    return [];
-  };
-
-  const sortedPosts = getSortedPosts();
-
-  const indexOfLastPost = currentPage * postsPerPage;
-  const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = sortedPosts.slice(indexOfFirstPost, indexOfLastPost);
-  const totalPages = Math.ceil(sortedPosts.length / postsPerPage);
+  }, [sort, page]);
 
   return (
-    <div className="min-h-screen bg-white px-[12%] pt-6 pb-24 relative text-[2.2rem]">
-      {/* 헤더 */}
-      <div className="flex justify-between items-center mb-6 px-4">
-        <img
-          src={logo}
-          alt="Mood Log"
-          className="h-44 cursor-pointer"
-          onClick={() => navigate("/main")}
-        />
-        <div className="flex gap-6">
-          <div className="relative">
-            <Bell 
-              className="w-9 h-9 cursor-pointer" 
-              onClick={() => setShowNotifications(!showNotifications)} 
-            />
-            {notifications.filter(n => !n.read).length > 0 && (
-              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center">
-                {notifications.filter(n => !n.read).length}
-              </div>
-            )}
-          </div>
-          <User className="w-9 h-9 cursor-pointer" onClick={() => setShowProfileMenu(!showProfileMenu)} />
+    <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">
+      <HeaderBox />
+      
+      {/* 타이틀 영역 */}
+      <div className="w-full bg-gradient-to-r from-purple-100/50 to-blue-100/50 backdrop-blur-sm pt-24 pb-6">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+            인기 게시글
+          </h1>
+          <p className="text-gray-500 mt-2">
+            MoodLog 사용자들의 게시글을 모아봤어요
+          </p>
         </div>
       </div>
 
-      {/* 알림/프로필 메뉴 */}
-      {showNotifications && (
-        <div
-          ref={notifRef}
-          className="absolute right-16 top-36 w-80 bg-white rounded-xl shadow-xl p-4 z-10 border"
-        >
-          <div className="flex items-center justify-between border-b pb-2 mb-4">
-            <div className="flex items-center gap-2">
-              <Bell className="text-gray-700" />
-              <span className="font-medium">알림</span>
+      {/* 메인 컨텐츠 */}
+      <div className="max-w-[1200px] mx-auto px-6 py-6">
+        {/* 필터 */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md p-4 border border-purple-100 mb-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+              게시글 목록
+            </h2>
+            <div className="flex items-center">
+              <select
+                value={sort}
+                onChange={(e) => {
+                  setSort(e.target.value as "latest" | "likes" | "comments");
+                  setPage(0);
+                }}
+                className="px-3 py-1.5 rounded-lg border border-purple-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 backdrop-blur-sm"
+              >
+                <option value="latest">최신순</option>
+                <option value="likes">좋아요 많은 순</option>
+                <option value="comments">댓글 많은 순</option>
+              </select>
             </div>
-            <X className="cursor-pointer" onClick={() => setShowNotifications(false)} />
-          </div>
-          <div className="max-h-60 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="text-center text-gray-500">알림이 없습니다.</div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-3 cursor-pointer hover:bg-gray-50 rounded-md ${
-                    !notification.read ? "bg-blue-50" : ""
-                  }`}
-                  onClick={() => handleNotificationClick(notification.id, notification.link)}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm">{notification.message}</p>
-                    {!notification.read && (
-                      <div className="w-2 h-2 bg-blue-500 rounded-full ml-2" />
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
-                </div>
-              ))
-            )}
           </div>
         </div>
-      )}
 
-      {showProfileMenu && (
-        <div
-          ref={profileRef}
-          className="absolute right-10 top-36 w-52 bg-white rounded-xl shadow-xl p-4 text-sm z-10 border"
-        >
-          <div className="flex items-center border-b pb-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mr-2">
-              <User className="w-6 h-6 text-black" />
-            </div>
-            <p className="font-bold text-base">닉네임</p>
+        {/* 게시글 그리드 */}
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="text-base text-gray-500">로딩 중...</div>
           </div>
-          <ul className="space-y-3 mt-4">
-            <li className="flex items-center gap-2 hover:underline cursor-pointer">내 글 목록</li>
-            <li
-              className="flex items-center gap-2 hover:underline cursor-pointer"
-              onClick={() => navigate("/mypage", { state: { from: location.pathname } })}
-            >
-              마이 페이지
-            </li>
-            <li className="flex items-center gap-2 hover:underline cursor-pointer text-black">로그아웃</li>
-          </ul>
-        </div>
-      )}
-
-      {/* 상단 인기글 + 정렬 */}
-      <div className="flex justify-between items-center bg-[#f2f0f1] rounded-md px-10 py-10 mb-14 border">
-        <div className="text-3xl font-semibold text-black flex items-center gap-2">
-          인기 글
-        </div>
-        <div className="relative text-xl">
-          <button
-            onClick={() => setDropdownOpen(!isDropdownOpen)}
-            className="border px-5 py-2 rounded shadow-sm bg-white"
-          >
-            {sortOptions.find(opt => opt.value === sortBy)?.label} ▼
-          </button>
-          {isDropdownOpen && (
-            <ul className="absolute right-0 mt-2 bg-white border rounded shadow z-10 w-48">
-              {sortOptions.map(option => (
-                <li
-                  key={option.value}
-                  onClick={() => {
-                    setSortBy(option.value);
-                    setDropdownOpen(false);
-                    setCurrentPage(1); // 정렬 바꿀 때 1페이지로 이동
-                  }}
-                  className={`px-5 py-3 cursor-pointer hover:bg-gray-100 ${
-                    sortBy === option.value ? "bg-blue-100" : ""
-                  }`}
-                >
-                  {option.label}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-
-      {/* 인기글 카드 목록 (5개씩 표시) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-20">
-        {currentPosts.length === 0 ? (
-          <div className="col-span-3 text-center text-gray-400 text-2xl py-16">
-            조건에 맞는 인기글이 없습니다.
+        ) : error ? (
+          <div className="text-center py-8">
+            <div className="text-base text-red-500">{error}</div>
           </div>
         ) : (
-          currentPosts.map(post => (
-            <div
-              key={post.id}
-              className="border p-14 rounded-xl shadow-md hover:shadow-xl transition"
-              onDoubleClick={() => navigate(`/postdetail/${post.id}`)}
-              style={{ cursor: "pointer" }}
-            >
-              <h3 className="text-3xl font-bold mb-8">{post.title}</h3>
-              <div className="text-xl text-gray-700 flex gap-10">
-                <span>♡ {post.likeCount ?? 0}</span>
-                <span>
-                  💬{" "}
-                  {Array.isArray(post.comments)
-                    ? post.comments.length
-                    : typeof post.commentCount === "number"
-                    ? post.commentCount
-                    : 0}
-                </span>
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+            {posts.map((post, index) => (
+              <div 
+                key={post.id} 
+                className="bg-white/90 backdrop-blur-sm rounded-lg shadow-sm border border-purple-100 p-2 hover:shadow-md transition-all duration-300 cursor-pointer aspect-square flex flex-col"
+                onClick={() => handlePostClick(post.id)}
+              >
+                {/* 썸네일 */}
+                {post.playlist?.tracks[0]?.albumImage ? (
+                  <div className="w-full aspect-square rounded-md overflow-hidden mb-1">
+                    <img
+                      src={post.playlist.tracks[0].albumImage}
+                      alt="앨범 커버"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-square rounded-md bg-gradient-to-br from-purple-100 to-blue-100 mb-1 flex items-center justify-center">
+                    <Music size={24} className="text-purple-300" />
+                  </div>
+                )}
+
+                {/* 제목 */}
+                <h3 className="text-xs font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text line-clamp-2 mb-1">
+                  {post.title}
+                </h3>
+
+                {/* 작성자 */}
+                <span className="text-[10px] text-gray-500 line-clamp-1">{post.authorName}</span>
+
+                {/* 하단 정보 */}
+                <div className="flex items-center justify-between mt-auto pt-1">
+                  <div className="flex items-center gap-2 text-[10px]">
+                    <div className="flex items-center gap-0.5 text-rose-500">
+                      <Heart size={10} className="fill-current" />
+                      <span>{post.likeCount}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5 text-blue-500">
+                      <MessageCircle size={10} />
+                      <span>{post.comments.length}</span>
+                    </div>
+                  </div>
+
+                  {/* 순위 뱃지 */}
+                  {sort === "likes" && post.likeCount > 0 && index < 3 && page === 0 && (
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-bold bg-gradient-to-r from-purple-500 to-blue-500">
+                      {index + 1}
+                    </div>
+                  )}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {/* 페이지네이션 */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-3 mt-6">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-purple-200 text-purple-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-50 transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-medium bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+                {page + 1}
+              </span>
+              <span className="text-gray-400">/</span>
+              <span className="text-base text-gray-600">
+                {totalPages}
+              </span>
             </div>
-          ))
+            
+            <button
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page === totalPages - 1}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-purple-200 text-purple-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-50 transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         )}
       </div>
 
-      {/* 페이지네이션 */}
-      <div className="flex justify-start mt-16 gap-4 text-xl text-gray-700">
-        {[...Array(totalPages)].map((_, idx) => (
-          <button
-            key={idx + 1}
-            onClick={() => setCurrentPage(idx + 1)}
-            className={`px-4 py-2 border rounded ${
-              currentPage === idx + 1 ? "bg-black text-white" : "bg-white"
-            }`}
-          >
-            {idx + 1}
-          </button>
-        ))}
-      </div>
+      {/* 플레이리스트 모달 */}
+      {showModal && selectedPlaylist && (
+        <PlaylistModal
+          playlist={selectedPlaylist}
+          onClose={closeModal}
+        />
+      )}
     </div>
   );
 }
 
-export default PopularPostsPage;

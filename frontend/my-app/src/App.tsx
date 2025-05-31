@@ -8,11 +8,10 @@ import HistoryPage from "./pages/HistoryPage";
 import PlayListEditor from "./pages/PlayListEditor";
 import PostPage from "./pages/PostPage";
 import MainPage from "./pages/MainPage";
-import MyPage from "./pages/MyPage";
 import PopularPostsPage from "./pages/PopularPostsPage";
 import PostDetail from "./pages/PostDetail";
 import PostEditPage from "./pages/PostEditPage";
-import OtherUserHistoryPage from "./pages/OtherUserHistroyPage";
+import OtherUserHistoryPage from "./pages/OtherUserHistoryPage";
 import FollowManagementPage from "./pages/FollowManagementPage";
 import SearchPage from "./pages/SearchPage";
 import { UserProvider } from "./contexts/UserContext"; 
@@ -29,7 +28,6 @@ function App() {
           <Route path="/playlistEditor" element={<PlayListEditor />} />
           <Route path="/post" element={<PostPage />} />
           <Route path="/main" element={<MainPage />} />
-          <Route path="/mypage" element={<MyPage />} />
           <Route path="/popular" element={<PopularPostsPage />} />
           <Route path="/postdetail/:id" element={<PostDetail />} />
           <Route path="/edit/:id" element={<PostEditPage />} />

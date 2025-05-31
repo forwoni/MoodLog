@@ -8,14 +8,19 @@ interface UserInfo {
   profileImage?: string;
 }
 
-export const UserInfoBox = (): React.JSX.Element => {
+interface UserInfoBoxProps {
+  username?: string;
+}
+
+export const UserInfoBox = ({ username }: UserInfoBoxProps): React.JSX.Element => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
         const token = localStorage.getItem("access_token");
-        const res = await axios.get("/api/users/me", {
+        const endpoint = username ? `/api/users/profile/${username}` : "/api/users/me";
+        const res = await axios.get(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserInfo(res.data);
@@ -25,12 +30,12 @@ export const UserInfoBox = (): React.JSX.Element => {
       }
     };
     fetchUserInfo();
-  }, []);
+  }, [username]);
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-6">
       {/* 프로필 이미지 */}
-      <div className="w-[104px] h-[104px] bg-white rounded-full flex items-center justify-center overflow-hidden">
+      <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center overflow-hidden shadow-sm border border-purple-100">
         {userInfo?.profileImage ? (
           <img
             src={userInfo.profileImage}
@@ -38,18 +43,21 @@ export const UserInfoBox = (): React.JSX.Element => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <User className="w-12 h-12 text-gray-300" />
+          <User className="w-8 h-8 text-purple-200" />
         )}
       </div>
 
       {/* 사용자 정보 */}
       <div className="flex flex-col">
-        <h2 className="text-2xl font-bold text-gray-800">
-          {userInfo?.username || "사용자 이름"}
+        <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+          {userInfo?.username || username || "사용자 이름"}
         </h2>
-        <p className="text-gray-600 mt-1">
-          {userInfo?.email || "이메일 정보 없음"}
-        </p>
+        {/* 다른 사용자의 경우 이메일을 표시하지 않음 */}
+        {!username && userInfo?.email && (
+          <p className="text-sm text-gray-500 mt-0.5">
+            {userInfo.email}
+          </p>
+        )}
       </div>
     </div>
   );
