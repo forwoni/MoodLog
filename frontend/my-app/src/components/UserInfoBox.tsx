@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { User } from "lucide-react";
 
 interface UserInfo {
   username: string;
@@ -27,26 +28,28 @@ export const UserInfoBox = (): React.JSX.Element => {
   }, []);
 
   return (
-    <div className="max-w-[1440px] w-full mx-auto px-8">
-      <div className="bg-gradient-to-r from-purple-200/60 to-purple-300/60 rounded-2xl shadow-md p-8 flex items-center gap-6">
-        {/* 프로필 이미지 */}
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center overflow-hidden shadow">
-          {userInfo?.profileImage ? (
-            <img
-              src={userInfo.profileImage}
-              alt="프로필"
-              className="w-full h-full object-cover rounded-full"
-            />
-          ) : (
-            <span className="text-gray-400 text-xl">🙂</span>
-          )}
-        </div>
+    <div className="flex items-center gap-4">
+      {/* 프로필 이미지 */}
+      <div className="w-[104px] h-[104px] bg-white rounded-full flex items-center justify-center overflow-hidden">
+        {userInfo?.profileImage ? (
+          <img
+            src={userInfo.profileImage}
+            alt="프로필"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <User className="w-12 h-12 text-gray-300" />
+        )}
+      </div>
 
-        {/* 사용자 정보 */}
-        <div className="flex flex-col">
-          <div className="text-xl font-bold text-gray-800">{userInfo?.username || "닉네임 없음"}</div>
-          <div className="text-sm text-gray-600">{userInfo?.email || "이메일 정보 없음"}</div>
-        </div>
+      {/* 사용자 정보 */}
+      <div className="flex flex-col">
+        <h2 className="text-2xl font-bold text-gray-800">
+          {userInfo?.username || "사용자 이름"}
+        </h2>
+        <p className="text-gray-600 mt-1">
+          {userInfo?.email || "이메일 정보 없음"}
+        </p>
       </div>
     </div>
   );

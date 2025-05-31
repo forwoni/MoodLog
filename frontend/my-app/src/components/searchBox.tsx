@@ -279,6 +279,8 @@ const SearchBox: React.FC<SearchBoxProps> = ({
           )
         };
       });
+      // 팔로우 상태 변경 이벤트 발생
+      window.dispatchEvent(new CustomEvent("followUpdated"));
     } catch (error) {
       console.error('Failed to follow user:', error);
     }
@@ -303,6 +305,8 @@ const SearchBox: React.FC<SearchBoxProps> = ({
           )
         };
       });
+      // 팔로우 상태 변경 이벤트 발생
+      window.dispatchEvent(new CustomEvent("followUpdated"));
     } catch (error) {
       console.error('Failed to unfollow user:', error);
     }

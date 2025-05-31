@@ -82,65 +82,122 @@ export default function FollowManagementPage() {
   const [activeTab, setActiveTab] = useState<"following" | "follower">("following");
   const [followings, setFollowings] = useState<FollowUser[]>([]);
   const [followers, setFollowers] = useState<FollowUser[]>([]);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [followerCount, setFollowerCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [refreshCounter, setRefreshCounter] = useState(0);
 
-  // 팔로우 변경 이벤트 리스너
+  // 팔로우 관련 이벤트 리스너들
   useEffect(() => {
     const handleFollowUpdate = () => {
-      setRefreshCounter(prev => prev + 1);
+      console.log("[FollowManagementPage] 팔로우 상태 업데이트 이벤트 감지");
+      setRefreshCounter(prev => {
+        console.log("[FollowManagementPage] refreshCounter 업데이트:", prev, "->", prev + 1);
+        return prev + 1;
+      });
     };
+
+    console.log("[FollowManagementPage] 이벤트 리스너 등록");
     window.addEventListener("followUpdated", handleFollowUpdate);
+    
     return () => {
+      console.log("[FollowManagementPage] 이벤트 리스너 제거");
       window.removeEventListener("followUpdated", handleFollowUpdate);
     };
   }, []);
 
-  // 팔로잉/팔로워 목록 조회
+  // 초기 로드 및 새로고침 시 양쪽 데이터 모두 가져오기
+  useEffect(() => {
+    const fetchBothCounts = async () => {
+      try {
+        setLoading(true);
+        console.log("[FollowManagementPage] 데이터 새로고침 시작 - refreshCounter:", refreshCounter);
+        
+        const [followingsRes, followersRes] = await Promise.all([
+          api.get<Page<FollowUser>>("/social/followings", {
+            params: { page: 0, size: 6, timestamp: Date.now() }
+          }),
+          api.get<Page<FollowUser>>("/social/followers", {
+            params: { page: 0, size: 6, timestamp: Date.now() }
+          })
+        ]);
+
+        console.log("[FollowManagementPage] API 응답:", {
+          followings: followingsRes.data,
+          followers: followersRes.data
+        });
+
+        const followingsList = followingsRes.data.content || [];
+        const followersList = followersRes.data.content || [];
+        const followingTotal = followingsRes.data.totalElements || 0;
+        const followerTotal = followersRes.data.totalElements || 0;
+
+        setFollowings(followingsList);
+        setFollowers(followersList);
+        setFollowingCount(followingTotal);
+        setFollowerCount(followerTotal);
+        setTotalPages(activeTab === "following" ? followingsRes.data.totalPages : followersRes.data.totalPages);
+        
+        console.log("[FollowManagementPage] 상태 업데이트 완료:", {
+          followingCount: followingTotal,
+          followerCount: followerTotal,
+          followings: followingsList,
+          followers: followersList
+        });
+      } catch (error) {
+        console.error('[FollowManagementPage] 데이터 로드 실패:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBothCounts();
+  }, [refreshCounter, activeTab]);
+
+  // 페이지 변경 시 해당 탭의 데이터만 업데이트
   const fetchUsers = useCallback(async () => {
+    if (currentPage === 0) return; // 첫 페이지는 이미 로드됨
+
     try {
       setLoading(true);
       const endpoint = activeTab === "following" ? "/social/followings" : "/social/followers";
       const res = await api.get<Page<FollowUser>>(endpoint, {
         params: {
           page: currentPage,
-          size: 6,
-          _: Date.now() // 캐시 방지
+          size: 6
         }
       });
 
+      const list = res.data.content || [];
       if (activeTab === "following") {
-        const list = Array.isArray(res.data)
-          ? res.data
-          : res.data.content || [];
         setFollowings(list);
-        console.log("팔로잉 목록:", list);
       } else {
-        const list = Array.isArray(res.data)
-          ? res.data
-          : res.data.content || [];
         setFollowers(list);
       }
-      setTotalPages(res.data.totalPages || 1);
+      setTotalPages(res.data.totalPages);
     } catch (error) {
-      alert("목록 조회 실패");
+      console.error('목록 조회 실패:', error);
+      alert('목록 조회에 실패했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [activeTab, currentPage, refreshCounter]);
+  }, [activeTab, currentPage]);
 
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    if (currentPage !== 0) {
+      fetchUsers();
+    }
+  }, [fetchUsers, currentPage]);
 
   const handleDeleteFollowing = async (username: string) => {
     try {
       await api.delete("/social/unfollow", { data: { followingUsername: username } });
       setRefreshCounter(prev => prev + 1);
     } catch (error) {
-      alert("이웃 삭제 실패");
+      console.error('언팔로우 실패:', error);
+      alert('이웃 삭제에 실패했습니다.');
     }
   };
 
@@ -158,10 +215,7 @@ export default function FollowManagementPage() {
       <HeaderBox />
 
       <div className="w-full flex justify-center mt-[102px]">
-        <UserInfoBox
-          userName={currentUser.username}
-          userDescription={currentUser.nickname || "소개글이 없습니다"}
-        />
+        <UserInfoBox />
       </div>
 
       <div className="w-[1100px] mx-auto mt-12">
@@ -177,7 +231,7 @@ export default function FollowManagementPage() {
                 : "text-gray-500"
             }`}
           >
-            팔로잉 ({followings.length})
+            팔로잉 ({followingCount})
           </button>
           <button
             onClick={() => {
@@ -190,7 +244,7 @@ export default function FollowManagementPage() {
                 : "text-gray-500"
             }`}
           >
-            팔로워 ({followers.length})
+            팔로워 ({followerCount})
           </button>
         </div>
 
@@ -198,7 +252,7 @@ export default function FollowManagementPage() {
           <div className="text-center py-8">로딩 중...</div>
         ) : (
           <>
-            <div>
+            <div className="space-y-4">
               {(activeTab === "following" ? followings : followers).map((user) => (
                 <UserCard
                   key={user.id}
@@ -212,22 +266,11 @@ export default function FollowManagementPage() {
                 />
               ))}
             </div>
-
-            <div className="flex justify-center mt-8 gap-2">
-              {Array.from({ length: totalPages }).map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentPage(idx)}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === idx
-                      ? "bg-purple-600 text-white"
-                      : "bg-gray-100 hover:bg-gray-200"
-                  }`}
-                >
-                  {idx + 1}
-                </button>
-              ))}
-            </div>
+            {(activeTab === "following" ? followings : followers).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                {activeTab === "following" ? "팔로잉" : "팔로워"}가 없습니다
+              </div>
+            )}
           </>
         )}
       </div>
