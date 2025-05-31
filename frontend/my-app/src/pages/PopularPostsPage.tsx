@@ -4,6 +4,7 @@ import logo from "../assets/moodlog_logo_transparent.png";
 import { Bell, User, X } from "lucide-react";
 import axios from "axios";
 import api from "../services/axiosInstance";
+import { getNotifications, markNotificationAsRead } from '../services/notificationService';
 
 interface Notification {
   id: number;
@@ -61,8 +62,8 @@ function PopularPostsPage() {
   // 알림 목록 불러오기
   const fetchNotifications = async () => {
     try {
-      const res = await api.get<Notification[]>("/notifications");
-      setNotifications(res.data);
+      const data = await getNotifications();
+      setNotifications(data);
     } catch (error) {
       console.error("알림 조회 실패:", error);
     }
@@ -70,7 +71,22 @@ function PopularPostsPage() {
 
   useEffect(() => {
     fetchNotifications();
+
+    // 30초마다 알림 갱신
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  // 알림 클릭 시 읽음 처리 및 이동
+  const handleNotificationClick = async (id: number, link?: string) => {
+    try {
+      await markNotificationAsRead(id);
+      await fetchNotifications();
+      if (link) navigate(link);
+    } catch (error) {
+      console.error('알림 읽음 처리 실패:', error);
+    }
+  };
 
   // 좋아요 1개 이상, 댓글 1개 이상 필터링 후 정렬
   const getSortedPosts = () => {
@@ -158,6 +174,7 @@ function PopularPostsPage() {
                   className={`p-3 cursor-pointer hover:bg-gray-50 rounded-md ${
                     !notification.read ? "bg-blue-50" : ""
                   }`}
+                  onClick={() => handleNotificationClick(notification.id, notification.link)}
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-sm">{notification.message}</p>

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBox from '../components/searchBox';
 import logo from '../assets/moodlog_logo_transparent.png';
+import PopularChart from '../components/PopularChart';
 import {
   Bell,
   User,
@@ -14,11 +15,12 @@ import {
   Settings
 } from 'lucide-react';
 import api from '../services/axiosInstance';
+import { getNotifications, markNotificationAsRead } from '../services/notificationService';
 
 interface Notification {
   id: number;
   message: string;
-  read: boolean;
+  isRead: boolean;
   timestamp: string;
   link?: string;
 }
@@ -76,8 +78,13 @@ function MainPage() {
   // ✅ 알림 목록 불러오기
   const fetchNotifications = async () => {
     try {
-      const res = await api.get<Notification[]>('/notifications');
-      setNotifications(res.data);
+      const data = await getNotifications();
+      console.log('[Debug] Fetched notifications:', data.map((n: Notification) => ({
+        id: n.id,
+        message: n.message,
+        isRead: n.isRead
+      })));
+      setNotifications(data);
     } catch (error) {
       console.error('알림 조회 실패:', error);
     }
@@ -86,18 +93,24 @@ function MainPage() {
   useEffect(() => {
     fetchUserInfo();
     fetchNotifications();
+
+    // 30초마다 알림 갱신
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // ✅ 알림 클릭 시 읽음 처리 및 이동
   const handleNotificationClick = async (id: number, link?: string) => {
+    console.log(`[Debug] Notification clicked - ID: ${id}, Link: ${link}`);
     try {
-      await api.put(`/notifications/${id}/read`);
-      setNotifications((prev) =>
-        prev.map((noti) => (noti.id === id ? { ...noti, read: true } : noti))
+      await markNotificationAsRead(id);
+      console.log(`[Debug] Successfully processed notification click`);
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, isRead: true } : n)
       );
       if (link) navigate(link);
     } catch (error) {
-      console.error('알림 읽음 처리 실패:', error);
+      console.error('[Debug] 알림 읽음 처리 실패:', error);
     }
   };
 
@@ -105,7 +118,8 @@ function MainPage() {
   const markAllAsRead = async () => {
     try {
       await api.put('/notifications/read-all');
-      setNotifications((prev) => prev.map((noti) => ({ ...noti, read: true })));
+      console.log('[Debug] Successfully marked all notifications as read');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (error) {
       console.error('전체 읽음 처리 실패:', error);
     }
@@ -158,12 +172,12 @@ function MainPage() {
               key={notification.id}
               onClick={() => handleNotificationClick(notification.id, notification.link)}
               className={`p-3 cursor-pointer hover:bg-gray-50 rounded-md ${
-                !notification.read ? 'bg-blue-50' : ''
+                !notification.isRead ? 'bg-blue-50' : ''
               }`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm">{notification.message}</p>
-                {!notification.read && (
+                {!notification.isRead && (
                   <div className="w-2 h-2 bg-blue-500 rounded-full ml-2" />
                 )}
               </div>
@@ -192,9 +206,9 @@ function MainPage() {
               className="w-9 h-9 cursor-pointer"
               onClick={() => setShowNotifications(!showNotifications)}
             />
-            {notifications.filter(n => !n.read).length > 0 && (
+            {notifications.filter(n => !n.isRead).length > 0 && (
               <div className="absolute -top-2 -right-2 bg-red-500 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center">
-                {notifications.filter(n => !n.read).length}
+                {notifications.filter(n => !n.isRead).length}
               </div>
             )}
           </div>
@@ -211,16 +225,7 @@ function MainPage() {
         <section className="w-[580px] h-[100%] bg-white rounded-xl border border-gray-300 p-6 shadow-md flex flex-col">
           <h2 className="text-4xl font-bold mb-6">🎵 실시간 노래차트</h2>
           <div className="border border-gray-300 rounded-md px-4 py-6 space-y-5 overflow-y-auto flex-1">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-              <div key={i} className="flex items-center gap-4 w-full min-w-0 py-2">
-                <span className="w-8 text-xl font-semibold shrink-0">{i}</span>
-                <div className="w-14 h-14 bg-gray-300 rounded-md shrink-0" />
-                <div className="flex flex-col text-lg flex-grow min-w-0">
-                  <span className="font-medium truncate">곡 제목 {i}</span>
-                  <span className="text-gray-500 truncate">가수 이름</span>
-                </div>
-              </div>
-            ))}
+            <PopularChart />
           </div>
         </section>
 
