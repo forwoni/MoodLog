@@ -154,17 +154,42 @@ const SearchBox: React.FC<SearchBoxProps> = ({
   // 아이템 클릭 처리
   const handleItemClick = (index: number) => {
     let clickedItem: string | undefined;
+    let searchResultItem: any;
+    const historyAndSuggestionsLength = searchHistory.length + suggestions.length;
+    
     if (index < searchHistory.length) {
+      // 검색 기록 클릭
       clickedItem = searchHistory[index].keyword;
-    } else if (index < searchHistory.length + suggestions.length) {
+      setQuery(clickedItem);
+      setShowDropdown(false);
+      executeSearch(clickedItem);
+      navigate(`/search?q=${encodeURIComponent(clickedItem)}`);
+    } else if (index < historyAndSuggestionsLength) {
+      // 검색 제안 클릭
       clickedItem = suggestions[index - searchHistory.length].keyword;
-    } else {
-      return;
+      setQuery(clickedItem);
+      setShowDropdown(false);
+      executeSearch(clickedItem);
+      navigate(`/search?q=${encodeURIComponent(clickedItem)}`);
+    } else if (searchResults) {
+      // 검색 결과 클릭 (사용자 또는 게시글)
+      const userResultsStart = historyAndSuggestionsLength;
+      const postResultsStart = userResultsStart + searchResults.users.length;
+      
+      if (index < postResultsStart) {
+        // 사용자 결과 클릭
+        const userIndex = index - userResultsStart;
+        const user = searchResults.users[userIndex];
+        setShowDropdown(false);
+        navigate(`/user/${user.username}/posts`);
+      } else {
+        // 게시글 결과 클릭
+        const postIndex = index - postResultsStart;
+        const post = searchResults.posts[postIndex];
+        setShowDropdown(false);
+        navigate(`/postdetail/${post.id}`);
+      }
     }
-    setQuery(clickedItem);
-    setShowDropdown(false);
-    executeSearch(clickedItem);
-    navigate(`/search?q=${encodeURIComponent(clickedItem)}`);
   };
 
   // 검색 실행
@@ -300,7 +325,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                           ? "bg-blue-50"
                           : ""
                       }`}
-                      onClick={() => navigate(`/userpostdetail/${post.id}`)}
+                      onClick={() => handleItemClick(searchHistory.length + suggestions.length + index)}
                     >
                       <div className="font-medium text-gray-900 truncate">
                         {post.title}
@@ -329,7 +354,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                           ? "bg-blue-50"
                           : ""
                       }`}
-                      onClick={() => navigate(`/user/${user.username}/posts`)}
+                      onClick={() => handleItemClick(searchHistory.length + suggestions.length + index)}
                     >
                       <div className="font-medium text-gray-900">
                         @{user.username}
