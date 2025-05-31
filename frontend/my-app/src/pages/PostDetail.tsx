@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { HeaderBox } from "../layouts/headerBox";
-import UserPlayListBox from "../components/UserPlayListBox";
+import  UserPlayListBox  from "../components/UserPlayListBox";
 import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
 import api from "../services/axiosInstance";
+import { Heart, MessageCircle, Calendar, User, Edit, Trash2 } from "lucide-react";
 
 // 타입 선언
 interface Track {
   trackName: string;
   artist: string;
   spotifyUrl: string;
+  albumImage?: string;
 }
 
 interface Playlist {
+  id: number;
   name: string;
   description: string;
   tracks: Track[];
@@ -180,89 +183,136 @@ function PostDetailPage() {
     );
 
   return (
-    <div className="w-full min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">
       <HeaderBox
         showEditDelete={isMyPost}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
-      <div className="h-[102px]" />
-      <div className="max-w-[1200px] mx-auto pt-6">
-        <div className="flex flex-col items-center">
-          <div className="w-[600px] bg-white rounded-lg shadow border border-black p-10">
-            {/* 제목 */}
-            <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
-            <div className="border-b border-gray-300 mb-6"></div>
+      
+      {/* 게시글 헤더 */}
+      <div className="w-full bg-gradient-to-r from-purple-100/50 to-blue-100/50 backdrop-blur-sm pt-24 pb-6">
+        <div className="max-w-[800px] mx-auto px-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-blue-100 border-2 border-white shadow-sm flex items-center justify-center">
+                <User size={24} className="text-purple-300" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">{post.authorName}</h3>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Calendar size={14} className="mr-1" />
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+            {isMyPost && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/80 text-gray-700 hover:bg-white transition-colors border border-purple-100"
+                >
+                  <Edit size={16} />
+                  <span className="text-sm">수정</span>
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/80 text-red-600 hover:bg-red-50 transition-colors border border-red-100"
+                >
+                  <Trash2 size={16} />
+                  <span className="text-sm">삭제</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+            {post.title}
+          </h1>
+        </div>
+      </div>
 
-            {/* 본문 */}
+      {/* 메인 컨텐츠 */}
+      <div className="max-w-[800px] mx-auto px-6 py-8">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
+          {/* 본문 */}
+          <div className="p-8">
             <div
-              className="text-black whitespace-pre-line leading-relaxed mb-10 min-h-[500px]"
+              className="prose prose-purple max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
+          </div>
 
-            <div className="border-b border-gray-300 mb-6"></div>
-
-            {/* 플레이리스트 박스 */}
-            <div className="flex justify-center mb-8">
-              {isMyPost ? (
-                <UserPlayListBox
-                  showEditButton={true}
-                  playlist={post.playlist}
-                />
-              ) : (
-                <OtherUserPlayListBox
-                  username={post.authorName}
-                  playlist={post.playlist}
-                />
-              )}
+          {/* 플레이리스트 박스 */}
+          {post.playlist && (
+            <div className="border-t border-purple-100 bg-gradient-to-r from-purple-50/50 to-blue-50/50 p-8">
+              <div className="flex justify-center">
+                {isMyPost ? (
+                  <UserPlayListBox
+                    showEditButton={true}
+                    playlists={post.playlist ? [post.playlist] : []}
+                  />
+                ) : (
+                  <OtherUserPlayListBox
+                    username={post.authorName}
+                    playlists={post.playlist ? [post.playlist] : []}
+                  />
+                )}
+              </div>
             </div>
+          )}
 
-            <div className="border-b border-gray-300 mb-6"></div>
-
-            {/* 좋아요/댓글 */}
-            <div className="text-sm text-gray-600 mb-4 flex items-center gap-2">
+          {/* 좋아요/댓글 섹션 */}
+          <div className="border-t border-purple-100 p-6">
+            <div className="flex items-center gap-4 mb-6">
               <button
                 onClick={handleLike}
-                className={`mr-2 text-xl ${liked ? "text-red-500" : "text-gray-400"}`}
-                aria-label="좋아요"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+                  liked
+                    ? "bg-rose-100 text-rose-500"
+                    : "bg-gray-100 text-gray-500 hover:bg-rose-50 hover:text-rose-500"
+                } transition-colors`}
               >
-                ❤️
+                <Heart size={18} className={liked ? "fill-current" : ""} />
+                <span className="font-medium">{likeCount}</span>
               </button>
-              {likeCount} · 💬 댓글 {comments.length}
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-500">
+                <MessageCircle size={18} />
+                <span className="font-medium">{comments.length}</span>
+              </div>
             </div>
 
             {/* 댓글 입력 */}
-            <div>
+            <div className="space-y-4">
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 rows={3}
                 placeholder="댓글을 입력하세요"
-                className="w-full border rounded-md p-3 text-sm"
+                className="w-full rounded-xl border border-purple-100 p-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 resize-none"
               />
-              <button
-                onClick={handleCommentSubmit}
-                className="mt-2 px-4 py-2 bg-black text-white rounded"
-              >
-                등록
-              </button>
-              {commentError && (
-                <div className="text-red-500 text-sm mt-1">{commentError}</div>
-              )}
+              <div className="flex justify-between items-center">
+                {commentError && (
+                  <div className="text-red-500 text-sm">{commentError}</div>
+                )}
+                <button
+                  onClick={handleCommentSubmit}
+                  className="px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-colors ml-auto"
+                >
+                  댓글 작성
+                </button>
+              </div>
             </div>
 
             {/* 댓글 목록 */}
-            <div className="mt-6">
-              {comments
-                .filter((comment: any) => !!comment.id)
-                .map((comment: any) => (
-                  <CommentItem
-                    key={comment.id}
-                    comment={comment}
-                    currentUser={currentUser}
-                    onDelete={() => handleCommentDelete(comment.id)}
-                  />
-                ))}
+            <div className="mt-8 space-y-4">
+              {comments.map((comment) => (
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  currentUser={currentUser}
+                  onDelete={() => handleCommentDelete(comment.id)}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -271,7 +321,7 @@ function PostDetailPage() {
   );
 }
 
-// 댓글 컴포넌트
+// 댓글 아이템 컴포넌트
 function CommentItem({
   comment,
   currentUser,
@@ -281,32 +331,36 @@ function CommentItem({
   currentUser: any;
   onDelete: () => void;
 }) {
-  const isAuthor =
-    currentUser &&
+  const isMyComment =
+    currentUser?.username &&
     comment.authorUsername &&
-    currentUser.username &&
     currentUser.username.trim().toLowerCase() ===
       comment.authorUsername.trim().toLowerCase();
 
   return (
-    <div className="border-b py-4">
-      <div className="flex justify-between items-start">
-        <div>
-          <span className="font-bold">{comment.authorUsername}</span>
-          <p className="mt-1">{comment.content}</p>
-          <div className="text-xs text-gray-500 mt-1">
-            {comment.createdAt && new Date(comment.createdAt).toLocaleString()}
+    <div className="bg-white/50 rounded-xl p-4 hover:bg-white/80 transition-colors">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-purple-100 to-blue-100 border border-white shadow-sm flex items-center justify-center">
+            <User size={16} className="text-purple-300" />
+          </div>
+          <div>
+            <span className="font-medium text-gray-900">{comment.authorUsername}</span>
+            <span className="text-sm text-gray-500 ml-2">
+              {new Date(comment.createdAt).toLocaleDateString()}
+            </span>
           </div>
         </div>
-        {isAuthor && (
+        {isMyComment && (
           <button
             onClick={onDelete}
-            className="text-sm text-red-500 h-8 px-2 rounded hover:bg-gray-100"
+            className="text-sm text-gray-400 hover:text-red-500 transition-colors"
           >
             삭제
           </button>
         )}
       </div>
+      <p className="text-gray-600 pl-11">{comment.content}</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Clock } from "lucide-react";
+import { Search, X, Clock, UserPlus } from "lucide-react";
 import api from "../services/axiosInstance";
 import axios from "axios";
 import { useUser } from "../contexts/UserContext";
@@ -13,11 +13,18 @@ interface SearchHistory {
 
 interface SearchResult {
   posts: Array<{ id: number; title: string; content: string; authorName: string; createdAt: string; }>;
-  users: Array<{ id: number; username: string; email: string; }>;
+  users: Array<{ id: number; username: string; email: string; nickname: string; isFollowing?: boolean; }>;
 }
 
 interface Suggestion {
   keyword: string;
+}
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  nickname: string;
 }
 
 interface SearchBoxProps {
@@ -26,7 +33,7 @@ interface SearchBoxProps {
 }
 
 const SearchBox: React.FC<SearchBoxProps> = ({
-  className = "relative w-[1200px]",
+  className = "relative w-full max-w-3xl mx-auto",
   placeholder = "검색어를 입력하세요"
 }) => {
   const [query, setQuery] = useState("");
@@ -154,17 +161,42 @@ const SearchBox: React.FC<SearchBoxProps> = ({
   // 아이템 클릭 처리
   const handleItemClick = (index: number) => {
     let clickedItem: string | undefined;
+    let searchResultItem: any;
+    const historyAndSuggestionsLength = searchHistory.length + suggestions.length;
+    
     if (index < searchHistory.length) {
+      // 검색 기록 클릭
       clickedItem = searchHistory[index].keyword;
-    } else if (index < searchHistory.length + suggestions.length) {
+      setQuery(clickedItem);
+      setShowDropdown(false);
+      executeSearch(clickedItem);
+      navigate(`/search?q=${encodeURIComponent(clickedItem)}`);
+    } else if (index < historyAndSuggestionsLength) {
+      // 검색 제안 클릭
       clickedItem = suggestions[index - searchHistory.length].keyword;
-    } else {
-      return;
+      setQuery(clickedItem);
+      setShowDropdown(false);
+      executeSearch(clickedItem);
+      navigate(`/search?q=${encodeURIComponent(clickedItem)}`);
+    } else if (searchResults) {
+      // 검색 결과 클릭 (사용자 또는 게시글)
+      const userResultsStart = historyAndSuggestionsLength;
+      const postResultsStart = userResultsStart + searchResults.users.length;
+      
+      if (index < postResultsStart) {
+        // 사용자 결과 클릭
+        const userIndex = index - userResultsStart;
+        const user = searchResults.users[userIndex];
+        setShowDropdown(false);
+        navigate(`/user/${user.username}/posts`);
+      } else {
+        // 게시글 결과 클릭
+        const postIndex = index - postResultsStart;
+        const post = searchResults.posts[postIndex];
+        setShowDropdown(false);
+        navigate(`/postdetail/${post.id}`);
+      }
     }
-    setQuery(clickedItem);
-    setShowDropdown(false);
-    executeSearch(clickedItem);
-    navigate(`/search?q=${encodeURIComponent(clickedItem)}`);
   };
 
   // 검색 실행
@@ -194,9 +226,90 @@ const SearchBox: React.FC<SearchBoxProps> = ({
 
   // 검색 기록 삭제
   const deleteHistoryItem = async (keyword: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSearchHistory((prev) => prev.filter((item) => item.keyword !== keyword));
-    // 실제 삭제 API가 있다면 여기에 호출
+    e.preventDefault(); // 이벤트 기본 동작 방지
+    e.stopPropagation(); // 이벤트 버블링 방지
+    
+    console.log('Attempting to delete search history:', keyword); // 디버깅용 로그
+    
+    try {
+      // 백엔드 API 호출 (baseURL이 이미 /api이므로 중복 제거)
+      const response = await api.delete(`/search/histories/${encodeURIComponent(keyword)}`);
+      console.log('Delete response:', response); // 디버깅용 로그
+      
+      // UI 업데이트
+      setSearchHistory((prev) => {
+        console.log('Previous history:', prev); // 디버깅용 로그
+        const newHistory = prev.filter((item) => item.keyword !== keyword);
+        console.log('New history:', newHistory); // 디버깅용 로그
+        return newHistory;
+      });
+      
+      // 검색 기록이 모두 삭제되면 드롭다운 닫기
+      if (searchHistory.length === 1) {
+        setShowDropdown(false);
+      }
+
+      // 검색 기록 다시 불러오기
+      await fetchSearchHistory();
+    } catch (error: any) {
+      console.error('Failed to delete search history:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+    }
+  };
+
+  // 팔로우 처리 함수
+  const handleFollow = async (userId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // 클릭 이벤트 전파 방지
+    if (!currentUser) return;
+    
+    try {
+      await api.post(`/users/${userId}/follow`);
+      // 검색 결과 업데이트
+      setSearchResults(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          users: prev.users.map(user => 
+            user.id === userId 
+              ? { ...user, isFollowing: true }
+              : user
+          )
+        };
+      });
+      // 팔로우 상태 변경 이벤트 발생
+      window.dispatchEvent(new CustomEvent("followUpdated"));
+    } catch (error) {
+      console.error('Failed to follow user:', error);
+    }
+  };
+
+  // 언팔로우 처리 함수
+  const handleUnfollow = async (userId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // 클릭 이벤트 전파 방지
+    if (!currentUser) return;
+    
+    try {
+      await api.delete(`/users/${userId}/follow`);
+      // 검색 결과 업데이트
+      setSearchResults(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          users: prev.users.map(user => 
+            user.id === userId 
+              ? { ...user, isFollowing: false }
+              : user
+          )
+        };
+      });
+      // 팔로우 상태 변경 이벤트 발생
+      window.dispatchEvent(new CustomEvent("followUpdated"));
+    } catch (error) {
+      console.error('Failed to unfollow user:', error);
+    }
   };
 
   return (
@@ -210,25 +323,29 @@ const SearchBox: React.FC<SearchBoxProps> = ({
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
-          className="w-full px-24 py-6 pr-16 rounded-full outline-none text-2xl bg-white placeholder-gray-400 shadow focus:ring-2 focus:ring-blue-500"
+          className="w-full px-14 py-4 rounded-full outline-none text-lg bg-white/80 backdrop-blur-sm placeholder-gray-400 shadow-lg focus:ring-2 focus:ring-purple-500 transition-shadow"
         />
+        <div className="absolute left-5 top-1/2 transform -translate-y-1/2">
+          {query ? (
+            <X
+              className="text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"
+              size={20}
+              onClick={() => {
+                setQuery("");
+                setSearchResults(null);
+                setSuggestions([]);
+                inputRef.current?.focus();
+              }}
+            />
+          ) : (
+            <Search className="text-gray-400" size={20} />
+          )}
+        </div>
         <Search
-          className="absolute right-6 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
-          size={28}
+          className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer hover:text-purple-600 transition-colors"
+          size={20}
           onClick={handleSearch}
         />
-        {query && (
-          <X
-            className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700"
-            size={28}
-            onClick={() => {
-              setQuery("");
-              setSearchResults(null);
-              setSuggestions([]);
-              inputRef.current?.focus();
-            }}
-          />
-        )}
       </div>
       {showDropdown && (
         <div className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50">
@@ -300,7 +417,7 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                           ? "bg-blue-50"
                           : ""
                       }`}
-                      onClick={() => navigate(`/userpostdetail/${post.id}`)}
+                      onClick={() => handleItemClick(searchHistory.length + suggestions.length + index)}
                     >
                       <div className="font-medium text-gray-900 truncate">
                         {post.title}
@@ -329,13 +446,33 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                           ? "bg-blue-50"
                           : ""
                       }`}
-                      onClick={() => navigate(`/user/${user.username}/posts`)}
+                      onClick={() => handleItemClick(searchHistory.length + suggestions.length + index)}
                     >
-                      <div className="font-medium text-gray-900">
-                        @{user.username}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {user.email}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            @{user.username}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.email}
+                          </div>
+                        </div>
+                        {currentUser && currentUser.username !== user.username && (
+                          <button
+                            onClick={(e) => 
+                              user.isFollowing 
+                                ? handleUnfollow(user.id, e)
+                                : handleFollow(user.id, e)
+                            }
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              user.isFollowing
+                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                            }`}
+                          >
+                            {user.isFollowing ? '팔로잉' : '팔로우'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

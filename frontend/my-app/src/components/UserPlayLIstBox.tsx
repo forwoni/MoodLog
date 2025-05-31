@@ -2,58 +2,122 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import pencil_icon from "../assets/pencil_icon.svg";
 
-interface Track {
+// 타입 정의
+interface PlaylistTrack {
   trackName: string;
   artist: string;
-  albumImage: string;
   spotifyUrl: string;
+  albumImage?: string;
 }
+
 interface Playlist {
+  id: number;
   name: string;
   description: string;
-  tracks: Track[];
-}
-interface Props {
-  playlist: Playlist | null;
-  showEditButton?: boolean;
+  tracks: PlaylistTrack[];
 }
 
-const UserPlayListBox: React.FC<Props> = ({ playlist, showEditButton = true }) => {
+interface Props {
+  playlists: Playlist[];
+  showEditButton?: boolean;
+  onPlaylistClick?: (playlist: Playlist) => void;
+}
+
+const UserPlayListBox: React.FC<Props> = ({
+  playlists,
+  showEditButton = true,
+  onPlaylistClick,
+}) => {
   const navigate = useNavigate();
-  const firstTrackImage = playlist?.tracks?.[0]?.albumImage || "";
+
+  const handleBoxClick = (
+    playlist: Playlist,
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
+    e.stopPropagation();
+    if (onPlaylistClick) {
+      onPlaylistClick(playlist);
+    } else {
+      navigate("/playlisteditor");
+    }
+  };
+
+  if (!playlists || playlists.length === 0) {
+    return (
+      <div
+        className="w-60 h-[348px] mt-[30px] flex items-center justify-center text-gray-500 border rounded bg-white cursor-pointer"
+        onClick={() => navigate("/playlisteditor")}
+      >
+        플레이리스트 없음
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="w-60 bg-white rounded-2xl shadow-md border border-gray-200 p-4 cursor-pointer relative"
-      onClick={() => navigate("/playlisteditor")}
-    >
-      {showEditButton && (
-        <img
-          src={pencil_icon}
-          alt="수정"
-          className="absolute top-2 right-2 w-5 h-5"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate("/playlisteditor");
-          }}
-        />
-      )}
-      {playlist ? (
-        <>
-          <img
-            src={firstTrackImage}
-            alt="앨범 커버"
-            className="w-full h-40 object-cover rounded-lg mb-3"
-          />
-          <div className="text-sm text-gray-700 truncate">{playlist.tracks[0]?.trackName}</div>
-          <div className="text-base font-semibold text-gray-800 truncate">{playlist.name}</div>
-          <div className="text-xs text-gray-500 mt-1">🎵 {playlist.tracks.length}곡</div>
-        </>
-      ) : (
-        <div className="flex items-center justify-center text-gray-400 h-40">
-          플레이리스트 없음
-        </div>
-      )}
+    <div className="flex flex-col gap-4">
+      {playlists.map((playlist) => {
+        const firstTrack = playlist.tracks?.[0];
+        const firstTrackName = firstTrack?.trackName || "곡 없음";
+        const firstTrackImage = firstTrack?.albumImage;
+
+        return (
+          <div
+            key={playlist.id}
+            className="w-60 h-[348px] mt-[30px] cursor-pointer relative"
+            onClick={(e) => handleBoxClick(playlist, e)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ")
+                handleBoxClick(playlist, e as any);
+            }}
+            aria-label={`${playlist.name} 플레이리스트 보기`}
+          >
+            {showEditButton && (
+              <img
+                src={pencil_icon}
+                alt="수정"
+                className="absolute top-2 right-2 w-5 h-5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/playlisteditor");
+                }}
+              />
+            )}
+            <div className="flex flex-col items-center flex-1 rounded-md overflow-hidden border border-solid border-[#0000001a] bg-white">
+              {/* 이미지 영역 */}
+              <div className="relative flex-1 w-full h-60 bg-[#d8d8d880] flex items-center justify-center overflow-hidden">
+                {firstTrackImage ? (
+                  <img
+                    src={firstTrackImage}
+                    alt="대표 이미지"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="font-normal text-black text-center leading-4">
+                    {firstTrackName}
+                  </div>
+                )}
+              </div>
+
+              {/* 텍스트 정보 영역 */}
+              <div className="flex flex-col items-start gap-1 p-3 w-full">
+                <div className="font-normal text-base leading-6 text-black">
+                  {firstTrackName}
+                </div>
+                <div className="font-normal text-base leading-7 text-black">
+                  {playlist.name}
+                </div>
+                <div className="flex items-center gap-2 w-full">
+                  <div className="text-base leading-6 text-black">
+                    🎵 {playlist.tracks?.length || 0}곡
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

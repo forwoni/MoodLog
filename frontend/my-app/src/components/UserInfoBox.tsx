@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { User } from "lucide-react";
 
 interface UserInfo {
   username: string;
@@ -7,14 +8,19 @@ interface UserInfo {
   profileImage?: string;
 }
 
-export const UserInfoBox = (): React.JSX.Element => {
+interface UserInfoBoxProps {
+  username?: string;
+}
+
+export const UserInfoBox = ({ username }: UserInfoBoxProps): React.JSX.Element => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
         const token = localStorage.getItem("access_token");
-        const res = await axios.get("/api/users/me", {
+        const endpoint = username ? `/api/users/profile/${username}` : "/api/users/me";
+        const res = await axios.get(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserInfo(res.data);
@@ -24,29 +30,34 @@ export const UserInfoBox = (): React.JSX.Element => {
       }
     };
     fetchUserInfo();
-  }, []);
+  }, [username]);
 
   return (
-    <div className="max-w-[1440px] w-full mx-auto px-8">
-      <div className="bg-gradient-to-r from-purple-200/60 to-purple-300/60 rounded-2xl shadow-md p-8 flex items-center gap-6">
-        {/* 프로필 이미지 */}
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center overflow-hidden shadow">
-          {userInfo?.profileImage ? (
-            <img
-              src={userInfo.profileImage}
-              alt="프로필"
-              className="w-full h-full object-cover rounded-full"
-            />
-          ) : (
-            <span className="text-gray-400 text-xl">🙂</span>
-          )}
-        </div>
+    <div className="flex items-center gap-6">
+      {/* 프로필 이미지 */}
+      <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center overflow-hidden shadow-sm border border-purple-100">
+        {userInfo?.profileImage ? (
+          <img
+            src={userInfo.profileImage}
+            alt="프로필"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <User className="w-8 h-8 text-purple-200" />
+        )}
+      </div>
 
-        {/* 사용자 정보 */}
-        <div className="flex flex-col">
-          <div className="text-xl font-bold text-gray-800">{userInfo?.username || "닉네임 없음"}</div>
-          <div className="text-sm text-gray-600">{userInfo?.email || "이메일 정보 없음"}</div>
-        </div>
+      {/* 사용자 정보 */}
+      <div className="flex flex-col">
+        <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+          {userInfo?.username || username || "사용자 이름"}
+        </h2>
+        {/* 다른 사용자의 경우 이메일을 표시하지 않음 */}
+        {!username && userInfo?.email && (
+          <p className="text-sm text-gray-500 mt-0.5">
+            {userInfo.email}
+          </p>
+        )}
       </div>
     </div>
   );

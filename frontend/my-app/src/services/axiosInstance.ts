@@ -14,23 +14,30 @@ const api = axios.create({
 // 요청 전: accessToken 있으면 Authorization 헤더에 넣기
 api.interceptors.request.use(
   (config) => {
+    console.log(`[Debug] Sending ${config.method?.toUpperCase()} request to: ${config.baseURL}${config.url}`);
     const token = getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('[Debug] Request error:', error);
+    return Promise.reject(error);
+  }
 );
 
 // 응답 후: 401/403 에러면 refresh 로직 시도
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      console.log(`[Debug] Response from ${response.config.url}:`, response.status);
+      return response;
+    },
     async (error) => {
+      console.error(`[Debug] Response error from ${error.config?.url}:`, error.response?.status);
       const originalRequest = error.config;
       const refreshToken = getRefreshToken();
   
-      // 여기를 이렇게 고쳐보자:
       if (
         (error.response?.status === 401 || error.response?.status === 403) &&
         refreshToken &&
@@ -53,7 +60,6 @@ api.interceptors.response.use(
         }
       }
   
-      // 위 조건에 해당 안되면 (예: 404, 500 등) 그냥 에러만 넘기자
       return Promise.reject(error);
     }
   );

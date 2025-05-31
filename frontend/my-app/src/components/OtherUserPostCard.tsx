@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Heart, MessageCircle, Eye, Calendar, Music } from "lucide-react";
 
 // 타입 정의
 interface PlaylistTrack {
@@ -8,18 +9,21 @@ interface PlaylistTrack {
   spotifyUrl: string;
   albumImage?: string;
 }
+
 interface Playlist {
   id: number;
   name: string;
   description: string;
   tracks: PlaylistTrack[];
 }
+
 interface Comment {
   id: number;
   content: string;
   authorUsername: string;
   createdAt: string;
 }
+
 interface OtherUserPostCardProps {
   id: number;
   title: string;
@@ -30,7 +34,7 @@ interface OtherUserPostCardProps {
   likeCount: number;
   comments: Comment[];
   playlist?: Playlist;
-  onPlaylistClick: (playlist: Playlist) => void; // ✅ 모달 열기 핸들러!
+  onPlaylistClick: (playlist: Playlist) => void;
 }
 
 const OtherUserPostCard: React.FC<OtherUserPostCardProps> = ({
@@ -43,7 +47,7 @@ const OtherUserPostCard: React.FC<OtherUserPostCardProps> = ({
   likeCount,
   comments,
   playlist,
-  onPlaylistClick, // ✅
+  onPlaylistClick,
 }) => {
   const navigate = useNavigate();
 
@@ -55,37 +59,75 @@ const OtherUserPostCard: React.FC<OtherUserPostCardProps> = ({
 
   return (
     <div
-      className="border rounded-lg shadow-md bg-white p-6 mb-6 cursor-pointer hover:shadow-lg transition"
-      onDoubleClick={() => navigate(`/postdetail/${id}`)}
+      className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-purple-100 p-6 hover:shadow-lg transition-all duration-300 cursor-pointer"
+      onClick={() => navigate(`/postdetail/${id}`)}
     >
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-        <span className="text-xs text-gray-400">
-          {new Date(createdAt).toLocaleString()}
-        </span>
-      </div>
-      <div className="text-gray-600 mb-3">{getPreview(content)}</div>
-      <div className="flex items-center text-sm text-gray-500 space-x-4">
-        <span>작성자: {authorName}</span>
-        <span>조회수: {viewCount}</span>
-        <span className="flex items-center gap-1">❤️ {likeCount}</span>
-        <span>댓글: {comments?.length || 0}</span>
+      {/* 제목 및 날짜 */}
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text line-clamp-1 mb-1">
+            {title}
+          </h3>
+          <div className="flex items-center text-sm text-gray-500">
+            <span className="font-medium text-purple-600">@{authorName}</span>
+          </div>
+        </div>
+        <div className="flex items-center text-sm text-gray-400 shrink-0 ml-4">
+          <Calendar size={14} className="mr-1" />
+          {new Date(createdAt).toLocaleDateString()}
+        </div>
       </div>
 
-      {/* ✅ 플레이리스트 정보 및 모달 버튼 */}
-      {playlist && (
-        <div className="mt-4 p-3 bg-gray-50 rounded">
-          <div className="font-semibold text-sm mb-1">🎵 {playlist.name}</div>
-          <div className="text-xs text-gray-500 mb-2">{playlist.description}</div>
+      {/* 본문 */}
+      <p className="text-gray-600 line-clamp-2 mb-4">
+        {getPreview(content)}
+      </p>
+
+      {/* 하단 정보 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 text-rose-500">
+            <Heart size={16} className="fill-current" />
+            <span className="text-sm font-medium">{likeCount}</span>
+          </div>
+          <div className="flex items-center gap-1 text-blue-500">
+            <MessageCircle size={16} />
+            <span className="text-sm font-medium">{comments.length}</span>
+          </div>
+          <div className="flex items-center gap-1 text-emerald-500">
+            <Eye size={16} />
+            <span className="text-sm font-medium">{viewCount}</span>
+          </div>
+        </div>
+
+        {/* 플레이리스트 버튼 */}
+        {playlist && (
           <button
             onClick={(e) => {
-              e.stopPropagation(); // ✅ 부모 클릭 방지!
+              e.stopPropagation();
               onPlaylistClick(playlist);
             }}
-            className="mt-2 px-3 py-1 text-xs rounded-full bg-purple-100 text-purple-700 font-medium hover:bg-purple-200 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-medium hover:from-purple-600 hover:to-blue-600 transition-all"
           >
-            플레이리스트 보기
+            <Music size={14} />
+            플레이리스트
           </button>
+        )}
+      </div>
+
+      {/* 플레이리스트 미리보기 */}
+      {playlist && (
+        <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-100">
+          <div className="flex items-center gap-2">
+            <Music size={16} className="text-purple-500" />
+            <span className="font-medium text-purple-700">{playlist.name}</span>
+          </div>
+          {playlist.description && (
+            <p className="text-sm text-gray-600 mt-1">{playlist.description}</p>
+          )}
+          <div className="text-xs text-gray-500 mt-1">
+            {playlist.tracks.length}곡
+          </div>
         </div>
       )}
     </div>

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
-import { UserInfoBox } from "../components/UserInfoBox";
-import PlaylistModal from "../components/PlaylistModal";
-import { useUser } from "../contexts/UserContext";
-import { Image, Music, Heart, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, ChevronLeft, ChevronRight, Music } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import PlaylistModal from "../components/PlaylistModal";
+import { UserInfoBox } from "../components/UserInfoBox";
 
 // 타입 정의
 interface PlaylistTrack {
@@ -33,7 +33,6 @@ interface Post {
   id: number;
   title: string;
   content: string;
-  autoSaved: boolean;
   authorName: string;
   createdAt: string;
   updatedAt: string;
@@ -50,9 +49,9 @@ interface Page<T> {
 
 type ViewMode = "posts" | "playlists";
 
-export default function HistoryPage() {
+export default function OtherUserHistoryPage() {
+  const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { currentUser } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(0);
   const [sort, setSort] = useState<"recent" | "likes">("recent");
@@ -88,8 +87,8 @@ export default function HistoryPage() {
 
   useEffect(() => {
     const fetchPosts = async () => {
-      if (!currentUser?.username) {
-        setError("로그인이 필요합니다.");
+      if (!username) {
+        setError("사용자를 찾을 수 없습니다.");
         setPosts([]);
         setLoading(false);
         return;
@@ -99,7 +98,7 @@ export default function HistoryPage() {
         setError(null);
 
         const res = await api.get<Page<Post>>(
-          `/users/${currentUser.username}/posts`,
+          `/users/${username}/posts`,
           { params: { sort, page, size: viewMode === 'posts' ? 8 : 12 } }
         );
 
@@ -113,7 +112,7 @@ export default function HistoryPage() {
       }
     };
     fetchPosts();
-  }, [currentUser, sort, page, viewMode]);
+  }, [username, sort, page, viewMode]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">
@@ -122,7 +121,7 @@ export default function HistoryPage() {
       {/* 프로필 영역 */}
       <div className="w-full bg-gradient-to-r from-purple-100/50 to-blue-100/50 backdrop-blur-sm pt-24 pb-6">
         <div className="max-w-[1200px] mx-auto px-6">
-          <UserInfoBox />
+          {username && <UserInfoBox username={username} />}
         </div>
       </div>
 
@@ -132,7 +131,7 @@ export default function HistoryPage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-md p-4 border border-purple-100 mb-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
-              내 활동
+              {username}님의 활동
             </h2>
             <div className="flex items-center gap-3">
               {/* 보기 모드 토글 */}
@@ -332,4 +331,4 @@ export default function HistoryPage() {
       )}
     </div>
   );
-}
+} 

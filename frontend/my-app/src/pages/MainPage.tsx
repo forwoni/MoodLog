@@ -2,23 +2,29 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBox from '../components/searchBox';
 import logo from '../assets/moodlog_logo_transparent.png';
+import PopularChart from '../components/PopularChart';
+import MyPageModal from '../components/MyPageModal';
 import {
   Bell,
   User,
   X,
   Pencil,
   Heart,
-  Folder,
+  Users,
   LogOut,
   FileText,
-  Settings
+  Settings,
+  Music2,
+  TrendingUp
 } from 'lucide-react';
 import api from '../services/axiosInstance';
+import { getNotifications, markNotificationAsRead } from '../services/notificationService';
+import { useUser } from '../contexts/UserContext';
 
 interface Notification {
   id: number;
   message: string;
-  read: boolean;
+  isRead: boolean;
   timestamp: string;
   link?: string;
 }
@@ -31,32 +37,33 @@ interface UserInfo {
 
 function MainPage() {
   const navigate = useNavigate();
+  const { currentUser } = useUser();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const [showMyPageModal, setShowMyPageModal] = useState(false);
 
-  // ✅ 사용자 정보 조회 (accessToken 없으면 요청 안 함)
+  // 사용자 정보 조회
   const fetchUserInfo = async () => {
     const token = localStorage.getItem('access_token');
-    if (!token) return; // 🛑 accessToken 없으면 요청 안 함
+    if (!token) return;
 
     try {
       const res = await api.get<UserInfo>('/users/me');
       setUserInfo(res.data);
     } catch (error) {
       console.error('사용자 정보 조회 실패:', error);
-      handleLogout(); // 실패 시 로그아웃
+      handleLogout();
     }
   };
 
-  // ✅ 로그아웃 처리
+  // 로그아웃 처리
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem('refresh_token');
     if (!refreshToken) {
-      // 토큰 자체가 없으면 바로 이동
       localStorage.removeItem('access_token');
       navigate('/login');
       return;
@@ -73,27 +80,24 @@ function MainPage() {
     }
   };
 
-  // ✅ 알림 목록 불러오기
+  // 알림 목록 불러오기
   const fetchNotifications = async () => {
     try {
-      const res = await api.get<Notification[]>('/notifications');
-      setNotifications(res.data);
+      const data = await getNotifications();
+      setNotifications(data);
     } catch (error) {
       console.error('알림 조회 실패:', error);
     }
   };
 
-  useEffect(() => {
-    fetchUserInfo();
-    fetchNotifications();
-  }, []);
-
-  // ✅ 알림 클릭 시 읽음 처리 및 이동
-  const handleNotificationClick = async (id: number, link?: string) => {
+  // 알림 읽음 처리
+  const handleNotificationClick = async (notificationId: number, link?: string) => {
     try {
-      await api.put(`/notifications/${id}/read`);
-      setNotifications((prev) =>
-        prev.map((noti) => (noti.id === id ? { ...noti, read: true } : noti))
+      await markNotificationAsRead(notificationId);
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, isRead: true } : n
+        )
       );
       if (link) navigate(link);
     } catch (error) {
@@ -101,23 +105,35 @@ function MainPage() {
     }
   };
 
-  // ✅ 전체 알림 읽음 처리
+  // 전체 알림 읽음 처리
   const markAllAsRead = async () => {
     try {
-      await api.put('/notifications/read-all');
-      setNotifications((prev) => prev.map((noti) => ({ ...noti, read: true })));
+      await Promise.all(
+        notifications
+          .filter(n => !n.isRead)
+          .map(n => markNotificationAsRead(n.id))
+      );
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, isRead: true }))
+      );
     } catch (error) {
-      console.error('전체 읽음 처리 실패:', error);
+      console.error('전체 알림 읽음 처리 실패:', error);
     }
   };
 
-  // ✅ 외부 클릭 시 패널 닫기
+  // 초기 데이터 로딩
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+    fetchUserInfo();
+    fetchNotifications();
+  }, []);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
     };
@@ -125,11 +141,11 @@ function MainPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ✅ 알림 패널 UI
+  // 알림 패널 UI
   const NotificationPanel = () => (
     <div
       ref={notifRef}
-      className="absolute right-16 top-28 w-80 bg-white rounded-xl shadow-xl p-4 z-10 border"
+      className="absolute right-8 top-20 w-80 bg-white rounded-xl shadow-xl p-4 z-10 border"
     >
       <div className="flex items-center justify-between border-b pb-2 mb-4">
         <div className="flex items-center gap-2">
@@ -139,7 +155,7 @@ function MainPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={markAllAsRead}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-purple-600 hover:underline"
           >
             전체 읽음
           </button>
@@ -158,13 +174,13 @@ function MainPage() {
               key={notification.id}
               onClick={() => handleNotificationClick(notification.id, notification.link)}
               className={`p-3 cursor-pointer hover:bg-gray-50 rounded-md ${
-                !notification.read ? 'bg-blue-50' : ''
+                !notification.isRead ? 'bg-purple-50' : ''
               }`}
             >
               <div className="flex items-center justify-between">
                 <p className="text-sm">{notification.message}</p>
-                {!notification.read && (
-                  <div className="w-2 h-2 bg-blue-500 rounded-full ml-2" />
+                {!notification.isRead && (
+                  <div className="w-2 h-2 bg-purple-500 rounded-full ml-2" />
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
@@ -175,71 +191,169 @@ function MainPage() {
     </div>
   );
 
+  // 프로필 메뉴 UI
+  const ProfileMenu = () => (
+    <div
+      ref={profileRef}
+      className="absolute right-8 top-20 w-56 bg-white rounded-xl shadow-xl p-2 z-10 border"
+    >
+      <div className="p-3 border-b">
+        <div className="font-medium">{userInfo?.username}</div>
+        <div className="text-sm text-gray-500">{userInfo?.email}</div>
+      </div>
+      <div className="py-1">
+        <button
+          onClick={() => {
+            setShowProfileMenu(false);
+            setShowMyPageModal(true);
+          }}
+          className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-50 rounded-lg transition-colors"
+        >
+          <Settings size={18} />
+          <span>마이페이지</span>
+        </button>
+        <button
+          onClick={() => navigate('/history')}
+          className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-50 rounded-lg transition-colors"
+        >
+          <FileText size={18} />
+          <span>내 기록</span>
+        </button>
+        <button
+          onClick={() => navigate('/playlists')}
+          className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-50 rounded-lg transition-colors"
+        >
+          <Music2 size={18} />
+          <span>플레이리스트</span>
+        </button>
+        <button
+          onClick={() => navigate('/popular')}
+          className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-50 rounded-lg transition-colors"
+        >
+          <TrendingUp size={18} />
+          <span>인기 게시글</span>
+        </button>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-purple-50 rounded-lg transition-colors"
+        >
+          <LogOut size={18} />
+          <span>로그아웃</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="w-screen h-screen flex flex-col bg-[#F1F1F1] overflow-hidden text-[1.5rem]">
-      {/* 상단 영역 */}
-      <header className="h-[50%] bg-[#DAD6D6] flex flex-col items-center justify-center relative">
-        <img
-          src={logo}
-          alt="Mood Log"
-          className="h-72 mb-12 cursor-pointer"
-          onClick={() => navigate('/main')}
-        />
-        <SearchBox />
-        <div className="absolute top-10 right-14 flex gap-10">
-          <Bell
-            className="w-9 h-9 cursor-pointer"
-            onClick={() => setShowNotifications(!showNotifications)}
-          />
-          <User
-            className="w-9 h-9 cursor-pointer"
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-          />
+    <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">
+      {/* 헤더 */}
+      <header className="bg-white/80 backdrop-blur-sm shadow-sm">
+        <div className="max-w-[1440px] mx-auto px-8 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img
+              src={logo}
+              alt="Mood Log"
+              className="h-12 cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => navigate('/main')}
+            />
+            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">MoodLog</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="relative">
+              <Bell
+                className="w-6 h-6 text-gray-700 cursor-pointer hover:text-purple-600 transition-colors"
+                onClick={() => setShowNotifications(!showNotifications)}
+              />
+              {notifications.filter(n => !n.isRead).length > 0 && (
+                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {notifications.filter(n => !n.isRead).length}
+                </div>
+              )}
+            </div>
+            <User
+              className="w-6 h-6 text-gray-700 cursor-pointer hover:text-purple-600 transition-colors"
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+            />
+          </div>
         </div>
       </header>
 
-      <div className="h-[2px] w-full bg-black" />
-
-      <main className="flex-1 flex flex-row px-36 py-10 bg-[#EFEFEF] text-[1.5rem] overflow-hidden">
-        <section className="w-[580px] h-[100%] bg-white rounded-xl border border-gray-300 p-6 shadow-md flex flex-col">
-          <h2 className="text-4xl font-bold mb-6">🎵 실시간 노래차트</h2>
-          <div className="border border-gray-300 rounded-md px-4 py-6 space-y-5 overflow-y-auto flex-1">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-              <div key={i} className="flex items-center gap-4 w-full min-w-0 py-2">
-                <span className="w-8 text-xl font-semibold shrink-0">{i}</span>
-                <div className="w-14 h-14 bg-gray-300 rounded-md shrink-0" />
-                <div className="flex flex-col text-lg flex-grow min-w-0">
-                  <span className="font-medium truncate">곡 제목 {i}</span>
-                  <span className="text-gray-500 truncate">가수 이름</span>
-                </div>
-              </div>
-            ))}
+      {/* 메인 컨텐츠 */}
+      <main className="max-w-[1200px] mx-auto px-8 py-8">
+        {/* 로고 & 검색 섹션 */}
+        <section className="mb-12 flex flex-col items-center">
+          <img
+            src={logo}
+            alt="Mood Log"
+            className="h-32 mb-6 cursor-pointer"
+            onClick={() => navigate('/main')}
+          />
+          <h1 className="text-3xl font-bold text-purple-900 text-center mb-6">
+            당신의 감정을 음악으로 기록하세요
+          </h1>
+          <div className="max-w-2xl w-full">
+            <SearchBox />
           </div>
         </section>
 
-        <div className="flex-grow flex justify-end items-center">
-          <div className="w-[1px] bg-gray-400 mx-28 self-stretch" />
+        {/* 기능 버튼 & 차트 섹션 */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* 왼쪽: 실시간 차트 */}
+          <div className="col-span-7">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-5 h-full border border-purple-100 hover:border-purple-200 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                  <Music2 className="w-4 h-4 text-white" />
+                </div>
+                <h2 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">실시간 인기 음악</h2>
+              </div>
+              <div className="overflow-hidden">
+                <PopularChart />
+              </div>
+            </div>
+          </div>
 
-          <section className="flex flex-col justify-center items-end gap-12">
+          {/* 오른쪽: 기능 버튼들 */}
+          <div className="col-span-5 space-y-3">
             <button
               onClick={() => navigate('/post')}
-              className="flex items-center gap-4 px-8 py-6 bg-white rounded-lg shadow border hover:bg-gray-100 text-2xl font-semibold w-80"
+              className="w-full flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl shadow-lg hover:from-purple-700 hover:to-blue-700 transition-all hover:scale-[1.02] group"
             >
-              <Pencil className="w-8 h-8 text-black" /> 글쓰기
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <Pencil className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold">새 글 작성하기</h3>
+                <p className="text-xs text-purple-200">당신의 감정을 음악과 함께 기록하세요</p>
+              </div>
             </button>
+
             <button
-              className="flex items-center gap-4 px-8 py-6 bg-white rounded-lg shadow border hover:bg-gray-100 text-2xl font-semibold w-80"
               onClick={() => navigate('/popular')}
+              className="w-full flex items-center gap-3 px-5 py-4 bg-white/80 backdrop-blur-sm text-gray-900 rounded-xl shadow-lg hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all hover:scale-[1.02] group border border-purple-100 hover:border-purple-200"
             >
-              <Heart className="w-8 h-8 text-black" /> 인기 글
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 text-left">
+                <h3 className="text-base font-semibold">인기 글</h3>
+                <p className="text-xs text-gray-500">다른 사람들의 인기있는 글을 확인하세요</p>
+              </div>
             </button>
+
             <button
               onClick={() => navigate('/followmanagement')}
-              className="flex items-center gap-4 px-8 py-6 bg-white rounded-lg shadow border hover:bg-gray-100 text-2xl font-semibold w-80"
+              className="w-full flex items-center gap-3 px-5 py-4 bg-white/80 backdrop-blur-sm text-gray-900 rounded-xl shadow-lg hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all hover:scale-[1.02] group border border-purple-100 hover:border-purple-200"
             >
-              <Folder className="w-8 h-8 text-black" /> 이웃 글
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 text-left">
+                <h3 className="text-base font-semibold">이웃 글</h3>
+                <p className="text-xs text-gray-500">팔로우하는 사람들의 글을 모아보세요</p>
+              </div>
             </button>
-          </section>
+          </div>
         </div>
       </main>
 
@@ -248,38 +362,14 @@ function MainPage() {
 
       {/* 프로필 메뉴 */}
       {showProfileMenu && (
-        <div
-          ref={profileRef}
-          className="absolute right-10 top-28 w-48 bg-white rounded-xl shadow-xl p-4 text-sm z-10 border"
-        >
-          <div className="flex items-center border-b pb-4">
-            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-2">
-              <User className="w-6 h-6 text-black" />
-            </div>
-            <p className="font-bold text-base">{userInfo?.username ?? '사용자'}</p>
-          </div>
-          <ul className="space-y-3 mt-4">
-            <li
-              className="flex items-center gap-2 hover:underline cursor-pointer"
-              onClick={() => navigate('/history')}
-            >
-              <FileText className="w-5 h-5 text-gray-700" /> 내 글 목록
-            </li>
-            <li
-              className="flex items-center gap-2 hover:underline cursor-pointer"
-              onClick={() => navigate('/mypage')}
-            >
-              <Settings className="w-5 h-5 text-gray-700" /> 마이 페이지
-            </li>
-            <li
-              className="flex items-center gap-2 hover:underline cursor-pointer text-black"
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5" /> 로그아웃
-            </li>
-          </ul>
-        </div>
+        <ProfileMenu />
       )}
+
+      {/* MyPageModal */}
+      <MyPageModal
+        isOpen={showMyPageModal}
+        onClose={() => setShowMyPageModal(false)}
+      />
     </div>
   );
 }

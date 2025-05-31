@@ -1,79 +1,135 @@
 // ✅ PlaylistModal.tsx
 import React from "react";
-import x_icon from "../assets/x_icon.svg";
+import { X, Music, ExternalLink, Clock } from "lucide-react";
 
-interface PlaylistTrack {
+interface Track {
   trackName: string;
   artist: string;
-  albumImage: string; // ✅ 모든 곡에 이미지 표시
   spotifyUrl: string;
+  albumImage?: string;
+  duration?: string;
+}
+
+interface Playlist {
+  id: number;
+  name: string;
+  description: string;
+  tracks: Track[];
 }
 
 interface PlaylistModalProps {
-  tracks: PlaylistTrack[];
+  playlist: Playlist;
   onClose: () => void;
 }
 
-const PlaylistModal: React.FC<PlaylistModalProps> = ({ tracks, onClose }) => {
+export default function PlaylistModal({ playlist, onClose }: PlaylistModalProps) {
+  // 배경 클릭 시 모달 닫기
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-[400px] max-h-[90vh] overflow-y-auto relative p-6">
-        {/* 닫기 버튼 */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 w-6 h-6 text-gray-600"
-        >
-          <img src={x_icon} alt="닫기" className="w-full h-full" />
-        </button>
-
-        {/* 모달 타이틀 */}
-        <h2 className="text-lg font-bold mb-4">플레이리스트</h2>
-
-        {/* 트랙 리스트 */}
-        <div className="flex flex-col gap-4">
-          {tracks.map((track, idx) => (
-            <div
-              key={idx}
-              className="flex items-center border border-gray-300 rounded-md p-3 hover:bg-gray-100 cursor-pointer"
-              onClick={() => window.open(track.spotifyUrl, "_blank")}
-            >
-              {/* 앨범 이미지 */}
-              <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 flex-shrink-0 mr-4">
-                {track.albumImage ? (
-                  <img
-                    src={track.albumImage}
-                    alt="앨범 이미지"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-sm text-gray-500">
-                    No Image
-                  </div>
-                )}
-              </div>
-
-              {/* 곡 정보 */}
-              <div className="flex flex-col flex-1">
-                <span className="font-semibold text-black">{track.trackName}</span>
-                <span className="text-sm text-gray-600">{track.artist}</span>
-              </div>
-
-              {/* 듣기 버튼 */}
-              <button
-                className="text-sm text-blue-500 underline ml-4"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(track.spotifyUrl, "_blank");
-                }}
-              >
-                듣기
-              </button>
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-md w-full max-w-2xl max-h-[80vh] overflow-hidden border border-purple-100">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between p-4 border-b border-purple-100">
+          <div className="flex items-center gap-3">
+            <Music className="w-4 h-4 text-purple-500" />
+            <div>
+              <h2 className="text-base font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text">
+                {playlist.name}
+              </h2>
+              {playlist.description && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {playlist.description}
+                </p>
+              )}
             </div>
-          ))}
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-purple-50 rounded-full transition-colors"
+          >
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        {/* 트랙 목록 */}
+        <div className="overflow-y-auto max-h-[calc(80vh-64px)]">
+          <div className="px-4 py-2">
+            {/* 헤더 행 */}
+            <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 px-3 py-2 text-xs font-medium text-gray-500 border-b border-purple-100">
+              <div className="w-8">#</div>
+              <div>제목</div>
+              <div>아티스트</div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-3 h-3" />
+              </div>
+            </div>
+
+            {/* 트랙 목록 */}
+            {playlist.tracks.map((track, index) => (
+              <div
+                key={index}
+                className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 px-3 py-2 hover:bg-purple-50/50 rounded-md group items-center"
+              >
+                {/* 트랙 번호 */}
+                <div className="w-8 text-xs text-gray-400 font-medium">
+                  {String(index + 1).padStart(2, '0')}
+                </div>
+
+                {/* 트랙 정보 */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                    {track.albumImage ? (
+                      <img
+                        src={track.albumImage}
+                        alt={track.trackName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Music className="w-4 h-4 text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {track.trackName}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 아티스트 */}
+                <div className="text-sm text-gray-500 truncate">
+                  {track.artist}
+                </div>
+
+                {/* 재생 시간 & 링크 */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-400 font-medium">
+                    {track.duration || ""}
+                  </span>
+                  <a
+                    href={track.spotifyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 text-gray-400 hover:text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default PlaylistModal;
+}
