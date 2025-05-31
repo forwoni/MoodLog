@@ -35,6 +35,10 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ 명시적 CORS 설정
                 .csrf(csrf -> csrf.disable())
+
+                .formLogin(form -> form.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
+
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->
                         auth
@@ -46,7 +50,9 @@ public class SecurityConfig {
                                 .requestMatchers("/error").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
-                                .requestMatchers("/api/search").permitAll()
+                                .requestMatchers("/api/search", "/api/search/**").permitAll()
+                                .requestMatchers("/api/search/histories").permitAll()
+                                .requestMatchers("/api/suggest").permitAll()
                                 .requestMatchers("/api/emotion/**").permitAll()
                                 .requestMatchers("/api/spotify/**").permitAll()
                                 .anyRequest().authenticated()
