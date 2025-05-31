@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../contexts/UserContext';
+import api from '../services/axiosInstance';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -9,6 +11,7 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const { fetchUser } = useUser();
 
   // 아이디 저장 기능: 컴포넌트 마운트 시 email 자동 입력
   useEffect(() => {
@@ -25,9 +28,9 @@ function LoginPage() {
     setSuccess('');
 
     try {
-      const res = await axios.post('http://localhost:8081/api/auth/login', {
-        email,
-        password,
+      const res = await api.post("/auth/login", { 
+        email, 
+        password 
       });
 
       if (res.status === 200) {
@@ -35,6 +38,9 @@ function LoginPage() {
         // 토큰 저장 (예시: localStorage)
         localStorage.setItem('access_token', res.data.accessToken);
         localStorage.setItem('refresh_token', res.data.refreshToken);
+
+        await fetchUser()
+        navigate('/main')
 
         // 아이디 저장 기능 (rememberMe)
         if (rememberMe) {
@@ -52,6 +58,8 @@ function LoginPage() {
       } else {
         setError('로그인 중 오류가 발생했습니다.');
       }
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
     }
   };
 

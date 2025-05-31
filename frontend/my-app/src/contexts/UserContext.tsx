@@ -11,6 +11,7 @@ interface UserContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   logout: () => void;
+  fetchUser: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -30,7 +31,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       const res = await api.get("/users/me");
       setCurrentUser(res.data);
     } catch (_) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
       setCurrentUser(null);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -57,7 +61,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ currentUser, setCurrentUser, logout }}>
+    <UserContext.Provider value={{ currentUser, setCurrentUser, logout, fetchUser }}>
       {!isLoading && children}
     </UserContext.Provider>
   );
