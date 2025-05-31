@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Clock } from "lucide-react";
+import { Search, X, Clock, UserPlus } from "lucide-react";
 import api from "../services/axiosInstance";
 import axios from "axios";
 import { useUser } from "../contexts/UserContext";
@@ -13,11 +13,18 @@ interface SearchHistory {
 
 interface SearchResult {
   posts: Array<{ id: number; title: string; content: string; authorName: string; createdAt: string; }>;
-  users: Array<{ id: number; username: string; email: string; }>;
+  users: Array<{ id: number; username: string; email: string; nickname: string; isFollowing?: boolean; }>;
 }
 
 interface Suggestion {
   keyword: string;
+}
+
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  nickname: string;
 }
 
 interface SearchBoxProps {
@@ -219,9 +226,86 @@ const SearchBox: React.FC<SearchBoxProps> = ({
 
   // 검색 기록 삭제
   const deleteHistoryItem = async (keyword: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSearchHistory((prev) => prev.filter((item) => item.keyword !== keyword));
-    // 실제 삭제 API가 있다면 여기에 호출
+    e.preventDefault(); // 이벤트 기본 동작 방지
+    e.stopPropagation(); // 이벤트 버블링 방지
+    
+    console.log('Attempting to delete search history:', keyword); // 디버깅용 로그
+    
+    try {
+      // 백엔드 API 호출 (baseURL이 이미 /api이므로 중복 제거)
+      const response = await api.delete(`/search/histories/${encodeURIComponent(keyword)}`);
+      console.log('Delete response:', response); // 디버깅용 로그
+      
+      // UI 업데이트
+      setSearchHistory((prev) => {
+        console.log('Previous history:', prev); // 디버깅용 로그
+        const newHistory = prev.filter((item) => item.keyword !== keyword);
+        console.log('New history:', newHistory); // 디버깅용 로그
+        return newHistory;
+      });
+      
+      // 검색 기록이 모두 삭제되면 드롭다운 닫기
+      if (searchHistory.length === 1) {
+        setShowDropdown(false);
+      }
+
+      // 검색 기록 다시 불러오기
+      await fetchSearchHistory();
+    } catch (error: any) {
+      console.error('Failed to delete search history:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+    }
+  };
+
+  // 팔로우 처리 함수
+  const handleFollow = async (userId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // 클릭 이벤트 전파 방지
+    if (!currentUser) return;
+    
+    try {
+      await api.post(`/users/${userId}/follow`);
+      // 검색 결과 업데이트
+      setSearchResults(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          users: prev.users.map(user => 
+            user.id === userId 
+              ? { ...user, isFollowing: true }
+              : user
+          )
+        };
+      });
+    } catch (error) {
+      console.error('Failed to follow user:', error);
+    }
+  };
+
+  // 언팔로우 처리 함수
+  const handleUnfollow = async (userId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // 클릭 이벤트 전파 방지
+    if (!currentUser) return;
+    
+    try {
+      await api.delete(`/users/${userId}/follow`);
+      // 검색 결과 업데이트
+      setSearchResults(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          users: prev.users.map(user => 
+            user.id === userId 
+              ? { ...user, isFollowing: false }
+              : user
+          )
+        };
+      });
+    } catch (error) {
+      console.error('Failed to unfollow user:', error);
+    }
   };
 
   return (
@@ -356,11 +440,31 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                       }`}
                       onClick={() => handleItemClick(searchHistory.length + suggestions.length + index)}
                     >
-                      <div className="font-medium text-gray-900">
-                        @{user.username}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {user.email}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            @{user.username}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.email}
+                          </div>
+                        </div>
+                        {currentUser && currentUser.username !== user.username && (
+                          <button
+                            onClick={(e) => 
+                              user.isFollowing 
+                                ? handleUnfollow(user.id, e)
+                                : handleFollow(user.id, e)
+                            }
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              user.isFollowing
+                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                            }`}
+                          >
+                            {user.isFollowing ? '팔로잉' : '팔로우'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
