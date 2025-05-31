@@ -112,8 +112,7 @@ export default function HistoryPage() {
           <h2 className="text-lg font-semibold text-gray-800 mb-2">나의 플레이리스트</h2>
           <UserPlayListBox
             showEditButton={true}
-            playlist={posts.find((p) => p.playlist)?.playlist || null}
-            username={currentUser?.username || ""}
+            playlists={posts.filter(p => p.playlist).map(p => p.playlist!)}
           />
         </aside>
 

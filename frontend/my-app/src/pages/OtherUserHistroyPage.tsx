@@ -164,7 +164,8 @@ export default function OtherUserHistoryPage() {
         <div className="w-[350px]">
           <OtherUserPlayListBox
             username={username || ""}
-            playlist={posts.find((p) => p.playlist)?.playlist || null}
+            playlists={posts.filter(p => p.playlist).map(p => p.playlist!)}
+            onPlaylistClick={openModal}
           />
         </div>
         <div className="ml-[100px] flex-1">

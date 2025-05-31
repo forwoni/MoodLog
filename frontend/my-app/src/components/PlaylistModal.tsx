@@ -5,8 +5,8 @@ import x_icon from "../assets/x_icon.svg";
 interface PlaylistTrack {
   trackName: string;
   artist: string;
-  albumImage: string; // ✅ 모든 곡에 이미지 표시
   spotifyUrl: string;
+  albumImage?: string;
 }
 
 interface PlaylistModalProps {
