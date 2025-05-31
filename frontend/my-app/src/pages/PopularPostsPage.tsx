@@ -3,6 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/moodlog_logo_transparent.png";
 import { Bell, User, X } from "lucide-react";
 import axios from "axios";
+import api from "../services/axiosInstance";
+
+interface Notification {
+  id: number;
+  message: string;
+  read: boolean;
+  timestamp: string;
+  link?: string;
+}
 
 const sortOptions = [
   { label: "좋아요 많은 순", value: "likes" },
@@ -16,6 +25,7 @@ function PopularPostsPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const postsPerPage = 5;
 
   const notifRef = useRef<HTMLDivElement>(null);
@@ -46,6 +56,20 @@ function PopularPostsPage() {
       }
     };
     fetchPosts();
+  }, []);
+
+  // 알림 목록 불러오기
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get<Notification[]>("/notifications");
+      setNotifications(res.data);
+    } catch (error) {
+      console.error("알림 조회 실패:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
   }, []);
 
   // 좋아요 1개 이상, 댓글 1개 이상 필터링 후 정렬
@@ -96,7 +120,17 @@ function PopularPostsPage() {
           onClick={() => navigate("/main")}
         />
         <div className="flex gap-6">
-          <Bell className="w-9 h-9 cursor-pointer" onClick={() => setShowNotifications(!showNotifications)} />
+          <div className="relative">
+            <Bell 
+              className="w-9 h-9 cursor-pointer" 
+              onClick={() => setShowNotifications(!showNotifications)} 
+            />
+            {notifications.filter(n => !n.read).length > 0 && (
+              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center">
+                {notifications.filter(n => !n.read).length}
+              </div>
+            )}
+          </div>
           <User className="w-9 h-9 cursor-pointer" onClick={() => setShowProfileMenu(!showProfileMenu)} />
         </div>
       </div>
@@ -108,12 +142,34 @@ function PopularPostsPage() {
           className="absolute right-16 top-36 w-80 bg-white rounded-xl shadow-xl p-4 z-10 border"
         >
           <div className="flex items-center justify-between border-b pb-2 mb-4">
-            <Bell className="text-gray-700" />
+            <div className="flex items-center gap-2">
+              <Bell className="text-gray-700" />
+              <span className="font-medium">알림</span>
+            </div>
             <X className="cursor-pointer" onClick={() => setShowNotifications(false)} />
           </div>
-          <div className="bg-gray-100 h-40 rounded-md mb-4"></div>
-          <div className="h-[1px] bg-gray-300" />
-          <div className="h-10 bg-white" />
+          <div className="max-h-60 overflow-y-auto">
+            {notifications.length === 0 ? (
+              <div className="text-center text-gray-500">알림이 없습니다.</div>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`p-3 cursor-pointer hover:bg-gray-50 rounded-md ${
+                    !notification.read ? "bg-blue-50" : ""
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm">{notification.message}</p>
+                    {!notification.read && (
+                      <div className="w-2 h-2 bg-blue-500 rounded-full ml-2" />
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 

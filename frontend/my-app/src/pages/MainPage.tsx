@@ -187,10 +187,17 @@ function MainPage() {
         />
         <SearchBox />
         <div className="absolute top-10 right-14 flex gap-10">
-          <Bell
-            className="w-9 h-9 cursor-pointer"
-            onClick={() => setShowNotifications(!showNotifications)}
-          />
+          <div className="relative">
+            <Bell
+              className="w-9 h-9 cursor-pointer"
+              onClick={() => setShowNotifications(!showNotifications)}
+            />
+            {notifications.filter(n => !n.read).length > 0 && (
+              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-sm rounded-full w-6 h-6 flex items-center justify-center">
+                {notifications.filter(n => !n.read).length}
+              </div>
+            )}
+          </div>
           <User
             className="w-9 h-9 cursor-pointer"
             onClick={() => setShowProfileMenu(!showProfileMenu)}
