@@ -14,6 +14,7 @@ import PostDetail from "./pages/PostDetail";
 import PostEditPage from "./pages/PostEditPage";
 import OtherUserHistoryPage from "./pages/OtherUserHistroyPage";
 import FollowManagementPage from "./pages/FollowManagementPage";
+import SearchPage from "./pages/SearchPage";
 import { UserProvider } from "./contexts/UserContext"; 
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/edit/:id" element={<PostEditPage />} />
           <Route path="/user/:username/posts" element={<OtherUserHistoryPage />} />
           <Route path="/followmanagement" element={<FollowManagementPage />} />
+          <Route path="/search" element={<SearchPage />} />
         </Routes>
       </BrowserRouter>
     </UserProvider>
