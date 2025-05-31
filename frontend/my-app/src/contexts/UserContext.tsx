@@ -52,6 +52,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    delete api.defaults.headers.common["Authorization"];
     setCurrentUser(null);
   };
 

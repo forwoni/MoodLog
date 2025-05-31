@@ -13,6 +13,7 @@ import {
   FileText,
   Settings
 } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
 import api from '../services/axiosInstance'; // axios 인스턴스 (토큰 자동 처리)
 
 interface Notification {
@@ -30,6 +31,13 @@ function MainPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const { logout } = useUser();
+
+  // 로그아웃웃
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  }
 
   // 알림 목록 API 연동
   const fetchNotifications = async () => {
@@ -227,10 +235,10 @@ function MainPage() {
             >
               <Settings className="w-5 h-5 text-gray-700" /> 마이 페이지
             </li>
-            <li
+            <li 
               className="flex items-center gap-2 hover:underline cursor-pointer text-black"
-              onClick={() => navigate('/')}
-            >
+              onClick={handleLogout}> 
+              
               <LogOut className="w-5 h-5" /> 로그아웃
             </li>
           </ul>
