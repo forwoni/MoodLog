@@ -13,14 +13,20 @@ import {
   FileText,
   Settings
 } from 'lucide-react';
-import api from '../services/axiosInstance'; // axios 인스턴스 (토큰 자동 처리)
+import api from '../services/axiosInstance';
 
 interface Notification {
   id: number;
   message: string;
   read: boolean;
   timestamp: string;
-  link?: string; // 알림 클릭 시 이동 경로
+  link?: string;
+}
+
+interface UserInfo {
+  id: number;
+  username: string;
+  email: string;
 }
 
 function MainPage() {
@@ -28,10 +34,46 @@ function MainPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // 알림 목록 API 연동
+  // ✅ 사용자 정보 조회 (accessToken 없으면 요청 안 함)
+  const fetchUserInfo = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return; // 🛑 accessToken 없으면 요청 안 함
+
+    try {
+      const res = await api.get<UserInfo>('/users/me');
+      setUserInfo(res.data);
+    } catch (error) {
+      console.error('사용자 정보 조회 실패:', error);
+      handleLogout(); // 실패 시 로그아웃
+    }
+  };
+
+  // ✅ 로그아웃 처리
+  const handleLogout = async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      // 토큰 자체가 없으면 바로 이동
+      localStorage.removeItem('access_token');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      navigate('/login');
+    }
+  };
+
+  // ✅ 알림 목록 불러오기
   const fetchNotifications = async () => {
     try {
       const res = await api.get<Notification[]>('/notifications');
@@ -42,10 +84,11 @@ function MainPage() {
   };
 
   useEffect(() => {
+    fetchUserInfo();
     fetchNotifications();
   }, []);
 
-  // 알림 클릭 시 읽음 처리 및 이동
+  // ✅ 알림 클릭 시 읽음 처리 및 이동
   const handleNotificationClick = async (id: number, link?: string) => {
     try {
       await api.put(`/notifications/${id}/read`);
@@ -58,7 +101,7 @@ function MainPage() {
     }
   };
 
-  // 전체 읽음 처리
+  // ✅ 전체 알림 읽음 처리
   const markAllAsRead = async () => {
     try {
       await api.put('/notifications/read-all');
@@ -68,6 +111,7 @@ function MainPage() {
     }
   };
 
+  // ✅ 외부 클릭 시 패널 닫기
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -81,7 +125,7 @@ function MainPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 알림 패널 UI
+  // ✅ 알림 패널 UI
   const NotificationPanel = () => (
     <div
       ref={notifRef}
@@ -212,7 +256,7 @@ function MainPage() {
             <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-2">
               <User className="w-6 h-6 text-black" />
             </div>
-            <p className="font-bold text-base">닉네임</p>
+            <p className="font-bold text-base">{userInfo?.username ?? '사용자'}</p>
           </div>
           <ul className="space-y-3 mt-4">
             <li
@@ -229,7 +273,7 @@ function MainPage() {
             </li>
             <li
               className="flex items-center gap-2 hover:underline cursor-pointer text-black"
-              onClick={() => navigate('/')}
+              onClick={handleLogout}
             >
               <LogOut className="w-5 h-5" /> 로그아웃
             </li>

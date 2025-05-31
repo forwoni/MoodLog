@@ -25,44 +25,38 @@ api.interceptors.request.use(
 
 // 응답 후: 401/403 에러면 refresh 로직 시도
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    // refreshToken 가져오기
-    const refreshToken = getRefreshToken();
-
-    // 아래 조건 중 하나라도 맞으면 refresh 요청을 아예 시도하지 않고 로그인 페이지로 이동
-    if (
-      !refreshToken ||
-      refreshToken.trim() === "" ||
-      (error.response?.status !== 401 && error.response?.status !== 403) ||
-      originalRequest._retry
-    ) {
-      window.location.href = "/login";
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+      const refreshToken = getRefreshToken();
+  
+      // 여기를 이렇게 고쳐보자:
+      if (
+        (error.response?.status === 401 || error.response?.status === 403) &&
+        refreshToken &&
+        refreshToken.trim() !== "" &&
+        !originalRequest._retry
+      ) {
+        originalRequest._retry = true;
+        try {
+          const res = await axios.post("/api/auth/refresh", { refreshToken });
+  
+          const { accessToken, refreshToken: newRefreshToken } = res.data;
+          setTokens(accessToken, newRefreshToken);
+          window.dispatchEvent(new Event("tokenRefreshed"));
+  
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return api(originalRequest);
+        } catch (refreshError) {
+          window.location.href = "/login";
+          return Promise.reject(refreshError);
+        }
+      }
+  
+      // 위 조건에 해당 안되면 (예: 404, 500 등) 그냥 에러만 넘기자
       return Promise.reject(error);
     }
-
-    // 여기까지 오면 refresh 요청 시도!
-    originalRequest._retry = true;
-    try {
-      const res = await axios.post("/api/auth/refresh", { refreshToken });
-
-      // 새 accessToken, refreshToken 저장
-      const { accessToken, refreshToken: newRefreshToken } = res.data;
-      setTokens(accessToken, newRefreshToken);
-
-      // 토큰 갱신 이벤트 발생
-      window.dispatchEvent(new Event("tokenRefreshed"));
-
-      // 원래 요청 헤더에 새 accessToken 갱신 후 재시도
-      originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-      return api(originalRequest);
-    } catch (refreshError) {
-      window.location.href = "/login";
-      return Promise.reject(refreshError);
-    }
-  }
-);
+  );
+  
 
 export default api;

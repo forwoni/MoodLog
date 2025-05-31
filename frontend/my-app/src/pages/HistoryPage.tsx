@@ -1,35 +1,31 @@
-// HistoryPage.tsx
 import React, { useEffect, useState } from "react";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 import SearchBox from "../components/searchBox";
-import { UserPlayListTitle } from "../components/UserPlayListTitle";
-import { UserPlayListBox } from "../components/UserPlayListBox";
 import HistoryBox from "../components/HistoryBox";
 import PlaylistModal from "../components/PlaylistModal";
 import { useUser } from "../contexts/UserContext";
-
+import UserPlayListBox  from "../components/UserPlayListBox";
+// 타입 정의
 interface PlaylistTrack {
   trackName: string;
   artist: string;
   spotifyUrl: string;
+  albumImage?: string;
 }
-
 interface Playlist {
   id: number;
   name: string;
   description: string;
   tracks: PlaylistTrack[];
 }
-
 interface Comment {
   id: number;
   content: string;
   authorUsername: string;
   createdAt: string;
 }
-
 interface Post {
   id: number;
   title: string;
@@ -46,9 +42,7 @@ interface Post {
 
 interface Page<T> {
   content: T[];
-  pageable: { pageNumber: number; pageSize: number };
   totalPages: number;
-  totalElements: number;
 }
 
 export default function HistoryPage() {
@@ -74,31 +68,26 @@ export default function HistoryPage() {
 
   useEffect(() => {
     const fetchPosts = async () => {
+      if (!currentUser?.username) {
+        setError("로그인이 필요합니다.");
+        setPosts([]);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
-        if (!currentUser?.username) {
-          setError("로그인이 필요합니다.");
-          setPosts([]);
-          setLoading(false);
-          return;
-        }
+
         const res = await api.get<Page<Post>>(
           `/users/${currentUser.username}/posts`,
           { params: { sort, page, size: 6 } }
         );
-        if (Array.isArray(res.data.content)) {
-          setPosts(res.data.content);
-          setTotalPages(res.data.totalPages || 1);
-        } else {
-          setPosts([]);
-          setTotalPages(1);
-          setError("서버 응답 형식 오류");
-        }
-      } catch (err) {
+
+        setPosts(res.data.content || []);
+        setTotalPages(res.data.totalPages || 1);
+      } catch {
         setError("게시글을 불러오는 중 오류가 발생했습니다.");
         setPosts([]);
-        setTotalPages(1);
       } finally {
         setLoading(false);
       }
@@ -107,23 +96,40 @@ export default function HistoryPage() {
   }, [currentUser, sort, page]);
 
   return (
-    <div className="w-[1440px] mx-auto flex flex-col items-center">
+    <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
       <HeaderBox />
-      <div className="w-[1440px] mx-auto mt-[102px]">
-        <UserInfoBox />
-      </div>
-      <div className="mt-[23px] flex justify-center">
-        <SearchBox />
-      </div>
-      <div className="flex flex-row mt-[40px]">
-        <div>
-          <UserPlayListTitle />
+
+      <main className="max-w-[1440px] mx-auto mt-[102px] flex gap-8 px-8">
+        {/* 왼쪽: 프로필 & 플레이리스트 */}
+        <aside className="flex flex-col w-[300px] gap-4">
+          <UserInfoBox />
           <UserPlayListBox
             showEditButton={true}
+            playlist={posts.find((p) => p.playlist)?.playlist || null}
             username={currentUser?.username || ""}
           />
-        </div>
-        <div className="ml-[70px] flex-1">
+        </aside>
+
+        {/* 오른쪽: 게시글 */}
+        <section className="flex-1 flex flex-col gap-6">
+          <SearchBox />
+
+          {/* 정렬 */}
+          <div className="flex justify-end">
+            <select
+              value={sort}
+              onChange={(e) => {
+                setSort(e.target.value as any);
+                setPage(0);
+              }}
+              className="border rounded-md px-3 py-1 text-sm"
+            >
+              <option value="recent">최신순</option>
+              <option value="likes">좋아요순</option>
+              <option value="comments">댓글순</option>
+            </select>
+          </div>
+
           <HistoryBox
             posts={posts}
             loading={loading}
@@ -135,10 +141,15 @@ export default function HistoryPage() {
             totalPages={totalPages}
             onPlaylistClick={openModal}
           />
-        </div>
-      </div>
+        </section>
+      </main>
+
+      {/* 모달 */}
       {showModal && selectedPlaylist && (
-        <PlaylistModal onClose={closeModal} tracks={selectedPlaylist.tracks} />
+        <PlaylistModal
+          onClose={closeModal}
+          tracks={selectedPlaylist.tracks}
+        />
       )}
     </div>
   );

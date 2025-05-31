@@ -29,12 +29,18 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       }
       const res = await api.get("/users/me");
       setCurrentUser(res.data);
+  
+      // 👉 여기에 추가!
+      if (res.data.username) {
+        localStorage.setItem("username", res.data.username);
+      }
     } catch (_) {
       setCurrentUser(null);
     } finally {
       setIsLoading(false);
     }
   };
+  
 
   useEffect(() => {
     fetchUser();
