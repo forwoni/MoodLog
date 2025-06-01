@@ -55,6 +55,7 @@ public class PostService {
                     Track track = new Track();
                     track.setTrackName(dtoTrack.getTrack_name());
                     track.setArtist(dtoTrack.getArtist());
+                    track.setAlbumImage(dtoTrack.getAlbum_image()); // ✅ 앨범 이미지도 저장!
                     track.setSpotifyUrl(dtoTrack.getSpotify_url());
                     return track;
                 }).toList();
@@ -193,6 +194,7 @@ public class PostService {
                             .map(track -> new PlaylistResponseDto.TrackDto(
                                     track.getTrackName(),
                                     track.getArtist(),
+                                    track.getAlbumImage(),
                                     track.getSpotifyUrl()
                             )).toList()
             );

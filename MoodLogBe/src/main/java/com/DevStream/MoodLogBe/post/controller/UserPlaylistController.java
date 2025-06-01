@@ -30,6 +30,7 @@ public class UserPlaylistController {
                                 .map(track -> new PlaylistResponseDto.TrackDto(
                                         track.getTrackName(),
                                         track.getArtist(),
+                                        track.getAlbumImage(),
                                         track.getSpotifyUrl()
                                 )).toList()
                 ))

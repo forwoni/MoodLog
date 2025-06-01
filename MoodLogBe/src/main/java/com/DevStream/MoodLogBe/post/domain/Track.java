@@ -15,6 +15,7 @@ public class Track {
 
     private String trackName;
     private String artist;
+    private String albumImage;
     private String spotifyUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)

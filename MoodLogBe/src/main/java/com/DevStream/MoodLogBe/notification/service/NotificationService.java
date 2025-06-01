@@ -6,11 +6,13 @@ import com.DevStream.MoodLogBe.notification.domain.NotificationType;
 import com.DevStream.MoodLogBe.notification.dto.NotificationResponseDto;
 import com.DevStream.MoodLogBe.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -22,7 +24,11 @@ public class NotificationService {
      * @param message 알림 메시지
      * @param type 알림 종류
      */
+    @Transactional
     public void send(User receiver, String message, NotificationType type) {
+        log.info("알림 생성 시작 - 수신자: {}, 메시지: {}, 타입: {}", 
+                receiver.getUsername(), message, type);
+
         // 새로운 알림 생성
         Notification notification = Notification.builder()
                 .receiver(receiver)
@@ -31,7 +37,8 @@ public class NotificationService {
                 .isRead(false) // 기본값: 읽지 않음
                 .build();
         // 알림 저장
-        notificationRepository.save(notification);
+        notification = notificationRepository.save(notification);
+        log.info("알림 저장 완료 - ID: {}", notification.getId());
     }
 
     /**
@@ -39,11 +46,14 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public List<NotificationResponseDto> getNotifications(User user) {
+        log.info("알림 목록 조회 - 사용자: {}", user.getUsername());
         // 사용자별 알림 목록을 최신순으로 조회 후 DTO로 변환
-        return notificationRepository.findByReceiverOrderByCreatedAtDesc(user)
+        List<NotificationResponseDto> notifications = notificationRepository.findByReceiverOrderByCreatedAtDesc(user)
                 .stream()
                 .map(NotificationResponseDto::from)
                 .toList();
+        log.info("알림 목록 조회 완료 - 개수: {}", notifications.size());
+        return notifications;
     }
 
     /**
@@ -64,5 +74,17 @@ public class NotificationService {
 
         // 읽음 처리
         notification.markAsRead();
+    }
+
+    /**
+     * 사용자의 모든 알림을 읽음 처리
+     * @param user 요청 사용자
+     */
+    @Transactional
+    public void markAllAsRead(User user) {
+        log.info("전체 알림 읽음 처리 시작 - 사용자: {}", user.getUsername());
+        List<Notification> notifications = notificationRepository.findByReceiverAndIsReadFalse(user);
+        notifications.forEach(Notification::markAsRead);
+        log.info("전체 알림 읽음 처리 완료 - 처리된 알림 수: {}", notifications.size());
     }
 }
