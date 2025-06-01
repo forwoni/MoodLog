@@ -10,12 +10,15 @@ import com.DevStream.MoodLogBe.notification.service.NotificationService;
 import com.DevStream.MoodLogBe.post.domain.Post;
 import com.DevStream.MoodLogBe.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CommentService {
@@ -26,10 +29,14 @@ public class CommentService {
     /**
      * 댓글 작성
      */
+    @Transactional
     public void create(Long postId, CommentRequestDto dto, User user) {
         // 게시글 조회 (없으면 예외)
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new NoSuchElementException("게시글 없음"));
+
+        log.info("댓글 작성 시도 - 게시글 ID: {}, 작성자: {}, 게시글 작성자: {}", 
+                postId, user.getUsername(), post.getAuthor().getUsername());
 
         // 댓글 엔티티 생성
         Comment comment = Comment.builder()
@@ -45,12 +52,17 @@ public class CommentService {
         commentRepository.save(comment);
 
         // 자기 자신의 게시글이 아니라면 알림 전송
-        if (!post.getAuthor().getId().equals(user.getId())) { // 자기 자신에게 알림 방지
+        if (!post.getAuthor().getId().equals(user.getId())) {
+            log.info("알림 전송 시도 - 수신자: {}, 발신자: {}", 
+                    post.getAuthor().getUsername(), user.getUsername());
             notificationService.send(
                     post.getAuthor(),
                     user.getUsername() + "님이 회원님의 게시글에 댓글을 남겼습니다.",
                     NotificationType.COMMENT
             );
+            log.info("알림 전송 완료");
+        } else {
+            log.info("본인 게시글에 댓글 작성 - 알림 전송 안 함");
         }
     }
 

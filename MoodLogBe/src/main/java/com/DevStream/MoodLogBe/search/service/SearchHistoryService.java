@@ -54,4 +54,14 @@ public class SearchHistoryService {
                 .map(SearchHistoryDto::from)
                 .toList();
     }
+
+    /**
+     * 검색 기록 삭제
+     * - 특정 사용자의 특정 키워드 검색 기록을 삭제
+     */
+    @Transactional
+    public void deleteSearchHistory(User user, String keyword) {
+        searchHistoryRepository.findByUserAndKeyword(user, keyword)
+                .ifPresent(searchHistoryRepository::delete);
+    }
 }

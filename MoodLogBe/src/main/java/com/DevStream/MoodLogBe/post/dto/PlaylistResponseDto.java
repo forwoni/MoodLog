@@ -18,6 +18,7 @@ public class PlaylistResponseDto {
     public static class TrackDto {
         private String trackName;
         private String artist;
+        private String albumImage;
         private String spotifyUrl;
     }
 }
