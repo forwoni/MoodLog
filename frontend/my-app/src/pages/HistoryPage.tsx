@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import api from "../services/axiosInstance";
 import { HeaderBox } from "../layouts/headerBox";
 import { UserInfoBox } from "../components/UserInfoBox";
 import PlaylistModal from "../components/PlaylistModal";
 import { useUser } from "../contexts/UserContext";
-import { Image, Music, Heart, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Image, Music, Heart, MessageCircle, ChevronLeft, ChevronRight, User, Loader } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 // 타입 정의
@@ -62,6 +62,87 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // fetchPosts를 useCallback으로 메모이제이션
+  const fetchPosts = useCallback(async (isInitialFetch: boolean = false) => {
+    if (!currentUser?.username) {
+      setError("로그인이 필요합니다.");
+      setIsInitialLoading(false);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      if (isInitialFetch) {
+        // 인위적인 로딩 시간 추가 (초기 로딩시에만)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      setLoading(true);
+      const res = await api.get<Page<Post>>(
+        `/users/${currentUser.username}/posts`,
+        { 
+          params: { 
+            sort, 
+            page,
+            size: viewMode === 'posts' ? 8 : 12
+          },
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        }
+      );
+
+      setPosts(res.data.content || []);
+      setTotalPages(Math.max(1, res.data.totalPages || 1));
+      setError(null);
+    } catch (error) {
+      console.error("게시글 조회 실패:", error);
+      setError("게시글을 불러오는 중 오류가 발생했습니다.");
+      setPosts([]);
+    } finally {
+      setLoading(false);
+      setIsInitialLoading(false);
+    }
+  }, [currentUser?.username, sort, page, viewMode]);
+
+  // 초기 로딩
+  useEffect(() => {
+    setIsInitialLoading(true);
+    fetchPosts(true);
+  }, [currentUser?.username]); // 사용자가 변경될 때만 초기 로딩 실행
+
+  // 페이지네이션, 정렬 변경 시 데이터 로딩
+  useEffect(() => {
+    if (!isInitialLoading && currentUser?.username) {
+      fetchPosts(false);
+    }
+  }, [sort, page, viewMode]); // fetchPosts는 useCallback으로 메모이제이션되어 있으므로 의존성 배열에서 제외
+
+  if (isInitialLoading) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-b from-white via-purple-50 to-blue-50 flex flex-col items-center justify-center z-50">
+        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-purple-100 flex flex-col items-center max-w-md mx-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mb-6 animate-pulse">
+            <User className="w-8 h-8 text-white animate-bounce" />
+          </div>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text mb-3">
+            게시글 불러오는 중
+          </h2>
+          <p className="text-gray-600 text-center mb-6">
+            {currentUser?.username}님의<br />
+            게시글을 불러오고 있습니다
+          </p>
+          <div className="flex items-center gap-2 text-purple-600">
+            <Loader className="w-5 h-5 animate-spin" />
+            <span>로딩 중...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const openModal = (playlist: Playlist, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -85,35 +166,6 @@ export default function HistoryPage() {
     postTitle: post.title,
     createdAt: post.createdAt
   }));
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      if (!currentUser?.username) {
-        setError("로그인이 필요합니다.");
-        setPosts([]);
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await api.get<Page<Post>>(
-          `/users/${currentUser.username}/posts`,
-          { params: { sort, page, size: viewMode === 'posts' ? 8 : 12 } }
-        );
-
-        setPosts(res.data.content || []);
-        setTotalPages(res.data.totalPages || 1);
-      } catch {
-        setError("게시글을 불러오는 중 오류가 발생했습니다.");
-        setPosts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
-  }, [currentUser, sort, page, viewMode]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">

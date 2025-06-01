@@ -227,8 +227,20 @@ export default function FollowManagementPage() {
           setFollowingCount(users.length);
         }
       } else {
-        const followerUsers = users.map(user => ({ ...user, isFollowing: false }));
-        console.log('Follower users:', followerUsers);
+        // 팔로워들의 팔로우 상태 확인
+        const followerUsers = await Promise.all(
+          users.map(async (user: FollowUser) => {
+            try {
+              const followCheckRes = await api.get(`/social/is-following?target=${user.followerUsername}`);
+              return { ...user, isFollowing: followCheckRes.data };
+            } catch (error) {
+              console.error('팔로우 상태 확인 실패:', error);
+              return { ...user, isFollowing: false };
+            }
+          })
+        );
+        
+        console.log('Follower users with follow status:', followerUsers);
         setFollowers(prev => page === 0 ? followerUsers : [...prev, ...followerUsers]);
         if (page === 0) {
           console.log('Setting follower count:', users.length);
