@@ -23,6 +23,7 @@ interface FollowUser {
   followingProfileImageUrl: string;
   createdAt: string;
   recentPosts?: Post[];
+  isFollowing: boolean;
 }
 
 interface Page<T> {
@@ -201,7 +202,9 @@ export default function FollowManagementPage() {
     try {
       setLoading(true);
       const endpoint = activeTab === "following" ? "/social/followings" : "/social/followers";
-      const res = await api.get<Page<FollowUser>>(endpoint, {
+      console.log('Fetching users from endpoint:', endpoint);
+      
+      const res = await api.get(endpoint, {
         params: {
           page,
           size: 10,
@@ -209,50 +212,82 @@ export default function FollowManagementPage() {
         }
       });
 
-      const newUsers = res.data.content || [];
+      console.log('API Response:', res.data);
       
+      // API 응답이 배열 형태로 오는 경우 처리
+      const users = Array.isArray(res.data) ? res.data : (res.data.content || []);
+      console.log('Processed users:', users);
+
       if (activeTab === "following") {
-        setFollowings(prev => page === 0 ? newUsers : [...prev, ...newUsers]);
+        const followingUsers = users.map(user => ({ ...user, isFollowing: true }));
+        console.log('Following users:', followingUsers);
+        setFollowings(prev => page === 0 ? followingUsers : [...prev, ...followingUsers]);
+        if (page === 0) {
+          console.log('Setting following count:', users.length);
+          setFollowingCount(users.length);
+        }
       } else {
-        setFollowers(prev => page === 0 ? newUsers : [...prev, ...newUsers]);
+        const followerUsers = users.map(user => ({ ...user, isFollowing: false }));
+        console.log('Follower users:', followerUsers);
+        setFollowers(prev => page === 0 ? followerUsers : [...prev, ...followerUsers]);
+        if (page === 0) {
+          console.log('Setting follower count:', users.length);
+          setFollowerCount(users.length);
+        }
       }
       
-      setTotalPages(res.data.totalPages);
-      setHasMore(page < res.data.totalPages - 1);
-      
-      if (page === 0) {
-        setFollowingCount(res.data.totalElements);
-        setFollowerCount(res.data.totalElements);
+      // 페이지네이션 정보가 있는 경우에만 설정
+      if (res.data.totalPages) {
+        setTotalPages(res.data.totalPages);
+        setHasMore(page < res.data.totalPages - 1);
+      } else {
+        // 배열 응답의 경우 더 이상 데이터가 없다고 가정
+        setTotalPages(1);
+        setHasMore(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('사용자 목록 조회 실패:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
     } finally {
       setLoading(false);
     }
   }, [activeTab]);
 
   useEffect(() => {
+    console.log('Active tab changed to:', activeTab);
     setCurrentPage(0);
     fetchUsers(0);
-  }, [activeTab]);
+  }, [activeTab, fetchUsers]);
 
   useEffect(() => {
     if (currentPage > 0) {
+      console.log('Loading more users, page:', currentPage);
       fetchUsers(currentPage);
     }
   }, [currentPage, fetchUsers]);
 
   const handleToggleFollow = async (username: string, isFollowing: boolean) => {
     try {
+      console.log('Toggling follow for user:', username, 'current status:', isFollowing);
+      
       if (isFollowing) {
         await api.delete("/social/unfollow", { data: { followingUsername: username } });
       } else {
         await api.post("/social/follow", { followingUsername: username });
       }
+
       // 현재 페이지 새로고침
+      console.log('Refreshing user list after follow toggle');
       fetchUsers(0);
-    } catch (error) {
+    } catch (error: any) {
       console.error('팔로우 상태 변경 실패:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
     }
   };
 
@@ -307,6 +342,12 @@ export default function FollowManagementPage() {
 
         {/* 사용자 목록 */}
         <div className="space-y-4">
+          {loading && <div className="text-center py-4">로딩 중...</div>}
+          {!loading && (activeTab === "following" ? followings : followers).length === 0 && (
+            <div className="text-center py-4 text-gray-500">
+              {activeTab === "following" ? "팔로우하는 사용자가 없습니다." : "팔로워가 없습니다."}
+            </div>
+          )}
           {(activeTab === "following" ? followings : followers).map((user) => (
             <UserCard
               key={user.id}
@@ -314,9 +355,9 @@ export default function FollowManagementPage() {
               type={activeTab}
               onToggleFollow={() => handleToggleFollow(
                 activeTab === "following" ? user.followingUsername : user.followerUsername,
-                activeTab === "following"
+                user.isFollowing
               )}
-              isFollowing={activeTab === "following"}
+              isFollowing={user.isFollowing}
             />
           ))}
         </div>

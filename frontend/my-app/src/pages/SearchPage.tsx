@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { HeaderBox } from '../layouts/headerBox';
 import api from '../services/axiosInstance';
 import { User, FileText, Heart, MessageCircle, Music, Calendar, Search, Users, Loader2 } from 'lucide-react';
+import { useUser } from '../contexts/UserContext';
 
 interface SearchUser {
   id: number;
@@ -35,6 +36,7 @@ interface SearchResult {
 export default function SearchPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { currentUser } = useUser();
   const [searchType, setSearchType] = useState<'all' | 'users' | 'posts'>(
     (searchParams.get('type') as 'all' | 'users' | 'posts') || 'all'
   );
@@ -80,7 +82,27 @@ export default function SearchPage() {
             type: searchType
           }
         });
-        setSearchResult(response.data);
+
+        // 각 사용자의 팔로우 상태 확인
+        if (response.data.users.length > 0) {
+          const usersWithFollowStatus = await Promise.all(
+            response.data.users.map(async (user) => {
+              try {
+                const followResponse = await api.get(`/social/is-following?target=${user.username}`);
+                return { ...user, isFollowing: followResponse.data };
+              } catch (error) {
+                console.error('Failed to check follow status:', error);
+                return { ...user, isFollowing: false };
+              }
+            })
+          );
+          setSearchResult({
+            ...response.data,
+            users: usersWithFollowStatus
+          });
+        } else {
+          setSearchResult(response.data);
+        }
       } catch (error) {
         console.error('검색 실패:', error);
       } finally {
@@ -94,20 +116,36 @@ export default function SearchPage() {
   const handleFollowToggle = async (userId: number, isFollowing: boolean, username: string) => {
     try {
       if (isFollowing) {
-        await api.delete('/social/unfollow', { data: { followingUsername: username } });
+        const unfollowData = { followingUsername: username };
+        console.log('Unfollowing user with data:', unfollowData);
+        const unfollowResponse = await api.delete('/social/unfollow', { data: unfollowData });
+        console.log('Unfollow response:', unfollowResponse);
       } else {
-        await api.post('/social/follow', { followingUsername: username });
+        const followData = { followingUsername: username };
+        console.log('Following user with data:', followData);
+        const followResponse = await api.post('/social/follow', followData);
+        console.log('Follow response:', followResponse);
       }
-      // 검색 결과 새로고침
-      const response = await api.get<SearchResult>('/search', {
-        params: {
-          query: debouncedQuery,
-          type: searchType
-        }
+      
+      // 해당 사용자의 팔로우 상태만 업데이트
+      setSearchResult(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          users: prev.users.map(user => 
+            user.id === userId 
+              ? { ...user, isFollowing: !isFollowing }
+              : user
+          )
+        };
       });
-      setSearchResult(response.data);
-    } catch (error) {
+      
+      // 팔로우 상태 변경 이벤트 발생
+      window.dispatchEvent(new CustomEvent("followUpdated"));
+    } catch (error: any) {
       console.error('팔로우 상태 변경 실패:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
     }
   };
 
@@ -211,16 +249,21 @@ export default function SearchPage() {
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleFollowToggle(user.id, user.isFollowing, user.username)}
-                          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            user.isFollowing
-                              ? 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'
-                              : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600'
-                          }`}
-                        >
-                          {user.isFollowing ? '언팔로우' : '팔로우'}
-                        </button>
+                        {currentUser && currentUser.username !== user.username && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleFollowToggle(user.id, user.isFollowing, user.username);
+                            }}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              user.isFollowing
+                                ? 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'
+                                : 'bg-gradient-to-r from-purple-500 to-blue-500 text-white hover:from-purple-600 hover:to-blue-600'
+                            }`}
+                          >
+                            {user.isFollowing ? '팔로잉' : '팔로우'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

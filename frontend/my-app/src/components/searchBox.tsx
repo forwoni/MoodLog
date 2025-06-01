@@ -13,7 +13,14 @@ interface SearchHistory {
 
 interface SearchResult {
   posts: Array<{ id: number; title: string; content: string; authorName: string; createdAt: string; }>;
-  users: Array<{ id: number; username: string; email: string; nickname: string; isFollowing?: boolean; }>;
+  users: Array<{
+    id: number;
+    username: string;
+    email: string;
+    nickname: string;
+    isFollowing?: boolean;
+    profileImage?: string;
+  }>;
 }
 
 interface Suggestion {
@@ -96,7 +103,28 @@ const SearchBox: React.FC<SearchBoxProps> = ({
         const { data } = await axios.get<SearchResult>("/api/search", {
           params: { query: searchQuery }
         });
-        setSearchResults(data);
+        
+        // 각 사용자의 팔로우 상태 확인
+        if (currentUser && data.users.length > 0) {
+          const usersWithFollowStatus = await Promise.all(
+            data.users.map(async (user) => {
+              try {
+                const response = await api.get(`/social/is-following?target=${user.username}`);
+                return { ...user, isFollowing: response.data };
+              } catch (error) {
+                console.error('Failed to check follow status:', error);
+                return { ...user, isFollowing: false };
+              }
+            })
+          );
+          setSearchResults({
+            ...data,
+            users: usersWithFollowStatus
+          });
+        } else {
+          setSearchResults(data);
+        }
+        
         if (currentUser) await fetchSearchHistory();
       } finally {
         setIsLoading(false);
@@ -261,12 +289,20 @@ const SearchBox: React.FC<SearchBoxProps> = ({
   };
 
   // 팔로우 처리 함수
-  const handleFollow = async (userId: number, e: React.MouseEvent) => {
+  const handleFollow = async (userId: number, username: string, e: React.MouseEvent) => {
     e.stopPropagation(); // 클릭 이벤트 전파 방지
     if (!currentUser) return;
     
+    const requestData = {
+      followingUsername: username
+    };
+    
+    console.log('Following user with data:', requestData);
+    
     try {
-      await api.post(`/users/${userId}/follow`);
+      const response = await api.post('/social/follow', requestData);
+      console.log('Follow response:', response);
+      
       // 검색 결과 업데이트
       setSearchResults(prev => {
         if (!prev) return null;
@@ -281,18 +317,22 @@ const SearchBox: React.FC<SearchBoxProps> = ({
       });
       // 팔로우 상태 변경 이벤트 발생
       window.dispatchEvent(new CustomEvent("followUpdated"));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to follow user:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
     }
   };
 
   // 언팔로우 처리 함수
-  const handleUnfollow = async (userId: number, e: React.MouseEvent) => {
+  const handleUnfollow = async (userId: number, username: string, e: React.MouseEvent) => {
     e.stopPropagation(); // 클릭 이벤트 전파 방지
     if (!currentUser) return;
     
     try {
-      await api.delete(`/users/${userId}/follow`);
+      await api.delete('/social/unfollow', { 
+        data: { followingUsername: username } 
+      });
       // 검색 결과 업데이트
       setSearchResults(prev => {
         if (!prev) return null;
@@ -459,14 +499,15 @@ const SearchBox: React.FC<SearchBoxProps> = ({
                         </div>
                         {currentUser && currentUser.username !== user.username && (
                           <button
-                            onClick={(e) => 
+                            onClick={(e) => {
+                              e.stopPropagation();
                               user.isFollowing 
-                                ? handleUnfollow(user.id, e)
-                                : handleFollow(user.id, e)
-                            }
+                                ? handleUnfollow(user.id, user.username, e)
+                                : handleFollow(user.id, user.username, e);
+                            }}
                             className={`px-3 py-1 rounded-full text-sm font-medium ${
                               user.isFollowing
-                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                ? 'bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600'
                                 : 'bg-blue-500 text-white hover:bg-blue-600'
                             }`}
                           >
