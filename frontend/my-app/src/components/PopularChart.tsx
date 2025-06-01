@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../services/axiosInstance';
+import { Music2 } from 'lucide-react';
 
 interface Track {
-  trackId: string;
   title: string;
   artist: string;
-  externalUrl: string;
-  imageUrl: string;
-  rankNum: number;
+  albumImageUrl: string;
+  spotifyId: string;
+  likes: number;
 }
 
 export default function PopularChart() {
@@ -18,8 +18,8 @@ export default function PopularChart() {
   const fetchData = async () => {
     try {
       setError(null);
-      const res = await axios.get('/api/spotify/charts');
-      setTracks(res.data);
+      const response = await api.get('/api/spotify/chart/popular');
+      setTracks(response.data);
     } catch (error) {
       console.error('차트 데이터 불러오기 실패', error);
       setError('차트 데이터를 불러오는데 실패했습니다.');
@@ -30,9 +30,6 @@ export default function PopularChart() {
 
   useEffect(() => {
     fetchData();
-    // 5분마다 데이터 갱신
-    const interval = setInterval(fetchData, 300000);
-    return () => clearInterval(interval);
   }, []);
 
   if (isLoading) {
@@ -45,39 +42,44 @@ export default function PopularChart() {
 
   if (error) {
     return (
-      <div className="text-center text-red-500">{error}</div>
+      <div className="text-center text-red-500 p-4 rounded-lg bg-red-50">
+        <Music2 className="w-8 h-8 mx-auto mb-2 text-red-400" />
+        {error}
+      </div>
     );
   }
 
   if (tracks.length === 0) {
     return (
-      <div className="text-center text-gray-500">차트 데이터가 없습니다.</div>
+      <div className="text-center text-gray-500 p-4 rounded-lg bg-gray-50">
+        <Music2 className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+        현재 인기 차트 데이터가 없습니다.
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4">
       {tracks.map((track) => (
         <div
-          key={track.trackId}
-          className="flex items-center gap-4 w-full min-w-0 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+          key={track.spotifyId}
+          onClick={() => window.open(`https://open.spotify.com/track/${track.spotifyId}`, '_blank')}
+          className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer group"
         >
-          <span className="w-8 text-xl font-semibold shrink-0">{track.rankNum}</span>
-          <img
-            src={track.imageUrl}
-            alt={track.title}
-            className="w-14 h-14 rounded-md shrink-0 object-cover"
-          />
-          <div className="flex flex-col text-lg flex-grow min-w-0">
-            <a
-              href={track.externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium truncate hover:underline"
-            >
-              {track.title}
-            </a>
-            <span className="text-gray-500 truncate">{track.artist}</span>
+          <div className="aspect-square overflow-hidden">
+            <img
+              src={track.albumImageUrl}
+              alt={track.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            />
+          </div>
+          <div className="p-4">
+            <h3 className="font-semibold text-lg mb-1 truncate">{track.title}</h3>
+            <p className="text-gray-600 truncate">{track.artist}</p>
+            <div className="mt-2 flex items-center gap-2 text-purple-600">
+              <Music2 className="w-4 h-4" />
+              <span className="text-sm">인기도: {track.likes}</span>
+            </div>
           </div>
         </div>
       ))}

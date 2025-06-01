@@ -194,7 +194,7 @@ export default function SearchPage() {
               }`}
             >
               <Users size={18} />
-              사용자 ({searchResult.userCount})
+              사용자
             </button>
             <button
               onClick={() => setSearchType('posts')}
@@ -205,7 +205,7 @@ export default function SearchPage() {
               }`}
             >
               <FileText size={18} />
-              게시글 ({searchResult.postCount})
+              게시글
             </button>
           </div>
         </div>
