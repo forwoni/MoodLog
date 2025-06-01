@@ -48,42 +48,72 @@ export default function PostPage() {
           return;
         }
 
+        // 기존 상태 초기화
+        setTitle("");
+        setContent("");
+        setCurrentDraftId(null);
+        if (editorRef.current) {
+          editorRef.current.innerHTML = "";
+        }
+
         const { data } = await api.get<Post[]>("/posts", {
           params: { autoSaved: true },
           headers: { Authorization: `Bearer ${token}` }
         });
 
         const myDrafts = data
-          .filter(post => post.autoSaved)
+          .filter(post => post.autoSaved && post.authorName === currentUser?.username)
           .sort((a, b) => b.id - a.id);
 
         if (myDrafts.length > 0) {
           const latestDraft = myDrafts[0];
-          setTitle(latestDraft.title);
-          setContent(latestDraft.content);
-          if (editorRef.current) {
-            editorRef.current.innerHTML = latestDraft.content;
-          }
-          setCurrentDraftId(latestDraft.id);
-
-          await Promise.all(
-            myDrafts.slice(1).map(draft =>
-              api.delete(`/posts/${draft.id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-              })
-            )
+          const loadDraft = window.confirm(
+            "임시저장된 글이 있습니다. 불러오시겠습니까?"
           );
+
+          if (loadDraft) {
+            setTitle(latestDraft.title);
+            setContent(latestDraft.content);
+            if (editorRef.current) {
+              editorRef.current.innerHTML = latestDraft.content;
+            }
+            setCurrentDraftId(latestDraft.id);
+
+            // 오래된 임시저장 글 삭제
+            await Promise.all(
+              myDrafts.slice(1).map(draft =>
+                api.delete(`/posts/${draft.id}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                })
+              )
+            );
+          } else {
+            // 임시저장 글을 불러오지 않을 경우 모든 임시저장 글 삭제
+            await Promise.all(
+              myDrafts.map(draft =>
+                api.delete(`/posts/${draft.id}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                })
+              )
+            );
+          }
         }
       } catch (error) {
         console.error("임시 저장글 불러오기 실패:", error);
-        alert("임시 저장글을 불러오지 못했습니다");
+        // 에러 발생 시에도 상태 초기화
+        setTitle("");
+        setContent("");
+        setCurrentDraftId(null);
+        if (editorRef.current) {
+          editorRef.current.innerHTML = "";
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     loadLatestDraft();
-  }, []);
+  }, [currentUser, navigate]);
 
   // 2. 자동 저장 기능
   useEffect(() => {
