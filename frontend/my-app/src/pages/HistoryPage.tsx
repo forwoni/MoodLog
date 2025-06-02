@@ -55,7 +55,7 @@ export default function HistoryPage() {
   const { currentUser } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(0);
-  const [sort, setSort] = useState<"recent" | "likes">("recent");
+  const [sort, setSort] = useState<"recent" | "likes" | "views">("recent");
   const [viewMode, setViewMode] = useState<ViewMode>("posts");
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -219,6 +219,7 @@ export default function HistoryPage() {
                 >
                   <option value="recent">최신순</option>
                   <option value="likes">좋아요순</option>
+                  <option value="views">조회수순</option>
                 </select>
               </div>
             </div>
@@ -385,3 +386,4 @@ export default function HistoryPage() {
     </div>
   );
 }
+

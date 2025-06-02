@@ -4,7 +4,9 @@ import { HeaderBox } from "../layouts/headerBox";
 import  UserPlayListBox  from "../components/UserPlayListBox";
 import { OtherUserPlayListBox } from "../components/OtherUserPlayListBox";
 import api from "../services/axiosInstance";
-import { Heart, MessageCircle, Calendar, User, Edit, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Calendar, User, Edit, Trash2, Music, Eye } from "lucide-react";
+import PlaylistModal from "../components/PlaylistModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 // 타입 선언
 interface Track {
@@ -43,6 +45,7 @@ function PostDetailPage() {
   const [comments, setComments] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   // 좋아요 관련
   const [liked, setLiked] = useState(false);
@@ -51,6 +54,10 @@ function PostDetailPage() {
   // 댓글 입력 관련
   const [newComment, setNewComment] = useState("");
   const [commentError, setCommentError] = useState("");
+
+  // 모달 관련
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // 사용자 정보
   useEffect(() => {
@@ -151,16 +158,32 @@ function PostDetailPage() {
     }
   };
 
-  const handleEdit = () => navigate(`/edit/${id}`);
-  const handleDelete = async () => {
-    if (!window.confirm("정말 삭제하시겠습니까?")) return;
+  const handleEdit = () => {
+    setShowEditModal(true);
+  };
+
+  const handleEditConfirm = () => {
+    setShowEditModal(false);
+    navigate(`/edit/${id}`);
+  };
+
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
       await api.delete(`/posts/${id}`);
       alert("게시글이 삭제되었습니다.");
-      navigate("/main");
+      navigate("/history");
     } catch {
       alert("삭제 실패");
     }
+  };
+
+  const handlePlaylistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowPlaylistModal(true);
   };
 
   if (error) {
@@ -244,19 +267,98 @@ function PostDetailPage() {
 
           {/* 플레이리스트 박스 */}
           {post.playlist && (
-            <div className="border-t border-purple-100 bg-gradient-to-r from-purple-50/50 to-blue-50/50 p-8">
-              <div className="flex justify-center">
-                {isMyPost ? (
-                  <UserPlayListBox
-                    showEditButton={true}
-                    playlists={post.playlist ? [post.playlist] : []}
-                  />
-                ) : (
-                  <OtherUserPlayListBox
-                    username={post.authorName}
-                    playlists={post.playlist ? [post.playlist] : []}
-                  />
-                )}
+            <div className="border-t border-purple-100">
+              <div className="p-8">
+                <div
+                  className="group relative bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl shadow-sm border border-purple-100 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"
+                  onClick={handlePlaylistClick}
+                >
+                  {/* 플레이리스트 헤더 */}
+                  <div className="flex items-start gap-6 p-6">
+                    {/* 앨범 커버 */}
+                    <div className="w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 rounded-xl overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-300">
+                      {post.playlist.tracks[0]?.albumImage ? (
+                        <img
+                          src={post.playlist.tracks[0].albumImage}
+                          alt="플레이리스트 커버"
+                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-purple-400 to-blue-400 flex items-center justify-center">
+                          <Music className="w-12 h-12 text-white/90" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 플레이리스트 정보 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Music className="w-5 h-5 text-purple-500" />
+                        <span className="text-sm font-medium text-purple-500">플레이리스트</span>
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text mb-2 line-clamp-2">
+                        {post.playlist.name}
+                      </h3>
+                      {post.playlist.description && (
+                        <p className="text-gray-600 mb-3 line-clamp-2">
+                          {post.playlist.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-3 text-sm text-gray-500">
+                        <div className="flex items-center gap-1.5">
+                          <Music className="w-4 h-4" />
+                          <span>{post.playlist.tracks.length}곡</span>
+                        </div>
+                        <span>•</span>
+                        <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 트랙 미리보기 */}
+                  <div className="px-6 pb-6">
+                    <div className="mt-4 space-y-2">
+                      {post.playlist.tracks.slice(0, 3).map((track, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 p-2 rounded-lg bg-white/50 hover:bg-white/80 transition-colors"
+                        >
+                          <div className="w-10 h-10 rounded-md overflow-hidden bg-gradient-to-br from-purple-100 to-blue-100 flex-shrink-0">
+                            {track.albumImage ? (
+                              <img
+                                src={track.albumImage}
+                                alt={track.trackName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Music className="w-4 h-4 text-purple-300" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 truncate">
+                              {track.trackName}
+                            </div>
+                            <div className="text-sm text-gray-500 truncate">
+                              {track.artist}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {post.playlist.tracks.length > 3 && (
+                        <div className="text-center pt-2">
+                          <span className="text-sm text-purple-500 font-medium">
+                            + {post.playlist.tracks.length - 3}곡 더보기
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 호버 효과용 오버레이 */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />
+                </div>
               </div>
             </div>
           )}
@@ -278,6 +380,10 @@ function PostDetailPage() {
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-500">
                 <MessageCircle size={18} />
                 <span className="font-medium">{comments.length}</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 text-purple-500">
+                <Eye size={18} />
+                <span className="font-medium">{post?.viewCount || 0}</span>
               </div>
             </div>
 
@@ -317,6 +423,33 @@ function PostDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 플레이리스트 모달 */}
+      {showPlaylistModal && post.playlist && (
+        <PlaylistModal
+          playlist={post.playlist}
+          onClose={() => setShowPlaylistModal(false)}
+        />
+      )}
+
+      {/* 모달 */}
+      <ConfirmModal
+        isOpen={showEditModal}
+        title="게시글 수정"
+        message="게시글을 수정하시겠습니까?"
+        onConfirm={handleEditConfirm}
+        onCancel={() => setShowEditModal(false)}
+      />
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="게시글 삭제"
+        message="정말 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="삭제"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteModal(false)}
+        isDanger
+      />
     </div>
   );
 }
