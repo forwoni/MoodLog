@@ -55,7 +55,7 @@ export default function HistoryPage() {
   const { currentUser } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
   const [page, setPage] = useState(0);
-  const [sort, setSort] = useState<"recent" | "likes" | "views">("recent");
+  const [sort, setSort] = useState<"latest" | "likes" | "comments">("latest");
   const [viewMode, setViewMode] = useState<ViewMode>("posts");
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -63,6 +63,12 @@ export default function HistoryPage() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  // HTML 태그와 엔티티를 제거하는 함수
+  const stripHtmlTags = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  };
 
   // fetchPosts를 useCallback으로 메모이제이션
   const fetchPosts = useCallback(async (isInitialFetch: boolean = false) => {
@@ -217,9 +223,9 @@ export default function HistoryPage() {
                   onChange={(e) => setSort(e.target.value as typeof sort)}
                   className="px-3 py-1.5 rounded-lg border border-purple-200 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white/50 backdrop-blur-sm"
                 >
-                  <option value="recent">최신순</option>
+                  <option value="latest">최신순</option>
                   <option value="likes">좋아요순</option>
-                  <option value="views">조회수순</option>
+                  <option value="comments">댓글순</option>
                 </select>
               </div>
             </div>
@@ -272,7 +278,7 @@ export default function HistoryPage() {
 
                   {/* 본문 */}
                   <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                    {post.content.replace(/<[^>]+>/g, '')}
+                    {stripHtmlTags(post.content)}
                   </p>
 
                   {/* 하단 정보 */}

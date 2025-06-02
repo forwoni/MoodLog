@@ -62,6 +62,12 @@ export default function OtherUserHistoryPage() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  // HTML 태그와 엔티티를 제거하는 함수
+  const stripHtmlTags = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  };
+
   const openModal = (playlist: Playlist, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedPlaylist(playlist);
@@ -218,8 +224,8 @@ export default function OtherUserHistoryPage() {
                   </div>
 
                   {/* 본문 */}
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                    {post.content.replace(/<[^>]+>/g, '')}
+                  <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                    {stripHtmlTags(post.content)}
                   </p>
 
                   {/* 하단 정보 */}
