@@ -50,6 +50,12 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState(query);
 
+  // HTML 태그와 엔티티를 제거하는 함수
+  const stripHtmlTags = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  };
+
   // 검색어 디바운싱
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -303,7 +309,9 @@ export default function SearchPage() {
                         </div>
                       </div>
                       <h4 className="text-lg font-medium text-gray-900 mb-2">{post.title}</h4>
-                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">{post.content}</p>
+                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                        {stripHtmlTags(post.content)}
+                      </p>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <Heart size={16} />

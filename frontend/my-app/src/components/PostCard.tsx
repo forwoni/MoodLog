@@ -14,6 +14,12 @@ const PostCard: React.FC<any> = ({
 }) => {
   const navigate = useNavigate();
 
+  // HTML 태그와 엔티티를 제거하는 함수
+  const stripHtmlTags = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  };
+
   return (
     <div 
       className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md border border-purple-100 p-6 hover:shadow-lg transition-all duration-300 cursor-pointer"
@@ -32,7 +38,7 @@ const PostCard: React.FC<any> = ({
 
       {/* 본문 */}
       <p className="text-gray-600 line-clamp-2 mb-4">
-        {content}
+        {stripHtmlTags(content)}
       </p>
 
       {/* 하단 정보 */}
