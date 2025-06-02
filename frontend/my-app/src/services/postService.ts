@@ -38,8 +38,8 @@ export const updatePost = async (postId: number, data: PostRequest) => {
 
 // 게시글 삭제
 export const deletePost = async (postId: number) => {
-  const res = await api.delete(`/posts/${postId}`);
-  return res.data;
+  await api.delete(`/posts/${postId}`);
+  return true; // 성공적으로 삭제되면 true 반환
 };
 
 // 좋아요 토글
