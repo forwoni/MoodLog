@@ -7,6 +7,7 @@ import api from "../services/axiosInstance";
 import { Heart, MessageCircle, Calendar, User, Edit, Trash2, Music, Eye } from "lucide-react";
 import PlaylistModal from "../components/PlaylistModal";
 import ConfirmModal from "../components/ConfirmModal";
+import { deletePost } from "../services/postService";
 
 // 타입 선언
 interface Track {
@@ -173,11 +174,19 @@ function PostDetailPage() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await api.delete(`/posts/${id}`);
+      await deletePost(Number(id));
       alert("게시글이 삭제되었습니다.");
       navigate("/history");
-    } catch {
-      alert("삭제 실패");
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      const errorMessage = error.response?.data?.message || "삭제 실패";
+      alert(errorMessage);
+      
+      // 401 에러인 경우 로그인 페이지로 이동
+      if (error.response?.status === 401) {
+        navigate("/login");
+        return;
+      }
     }
   };
 
