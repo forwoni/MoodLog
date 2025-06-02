@@ -15,11 +15,13 @@ import {
   FileText,
   Settings,
   Music2,
-  TrendingUp
+  TrendingUp,
+  Trash2
 } from 'lucide-react';
 import api from '../services/axiosInstance';
-import { getNotifications, markNotificationAsRead } from '../services/notificationService';
+import { getNotifications, markNotificationAsRead, deleteNotification, deleteAllNotifications } from '../services/notificationService';
 import { useUser } from '../contexts/UserContext';
+import ConfirmModal from '../components/ConfirmModal';
 
 interface Notification {
   id: number;
@@ -58,6 +60,9 @@ function MainPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const SPOTIFY_KOREA_TOP_50_URL = 'https://open.spotify.com/playlist/37i9dQZEVXbNxXF4SkHj9F';
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [notificationToDelete, setNotificationToDelete] = useState<number | null>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
   // 사용자 정보 조회
   const fetchUserInfo = async () => {
@@ -134,6 +139,27 @@ function MainPage() {
     }
   };
 
+  // 알림 삭제 처리
+  const handleDeleteNotification = async (notificationId: number) => {
+    try {
+      await deleteNotification(notificationId);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    } catch (error) {
+      console.error('알림 삭제 실패:', error);
+    }
+  };
+
+  // 모든 알림 삭제 처리
+  const handleDeleteAllNotifications = async () => {
+    try {
+      await deleteAllNotifications();
+      setNotifications([]);
+      setShowDeleteAllConfirm(false);
+    } catch (error) {
+      console.error('전체 알림 삭제 실패:', error);
+    }
+  };
+
   // 차트 데이터 가져오기
   const fetchChartData = async (page: number) => {
     try {
@@ -187,6 +213,12 @@ function MainPage() {
           >
             전체 읽음
           </button>
+          <button
+            onClick={() => setShowDeleteAllConfirm(true)}
+            className="text-xs text-rose-600 hover:text-rose-700 hover:underline transition-colors"
+          >
+            전체 삭제
+          </button>
           <X
             size={18}
             className="cursor-pointer text-gray-500 hover:text-gray-700 transition-colors"
@@ -204,20 +236,33 @@ function MainPage() {
           notifications.map((notification) => (
             <div
               key={notification.id}
-              onClick={() => handleNotificationClick(notification.id, notification.link)}
-              className={`p-3 cursor-pointer rounded-xl transition-colors ${
+              className={`p-3 cursor-pointer rounded-xl transition-colors relative group ${
                 !notification.isRead 
                   ? 'bg-purple-50 hover:bg-purple-100' 
                   : 'hover:bg-gray-50'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-700">{notification.message}</p>
-                {!notification.isRead && (
-                  <div className="w-2 h-2 bg-purple-500 rounded-full ml-2 animate-pulse" />
-                )}
+              <div 
+                className="flex-1"
+                onClick={() => handleNotificationClick(notification.id, notification.link)}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-700">{notification.message}</p>
+                  {!notification.isRead && (
+                    <div className="w-2 h-2 bg-purple-500 rounded-full ml-2 animate-pulse" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
               </div>
-              <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
+              <button
+                onClick={() => {
+                  setNotificationToDelete(notification.id);
+                  setShowDeleteConfirm(true);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-red-50"
+              >
+                <Trash2 size={16} className="text-red-500" />
+              </button>
             </div>
           ))
         )}
@@ -474,6 +519,37 @@ function MainPage() {
 
       {/* 로그아웃 모달 */}
       {showLogoutModal && <LogoutModal />}
+
+      {/* 알림 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="알림 삭제"
+        message="이 알림을 삭제하시겠습니까?"
+        confirmText="삭제"
+        onConfirm={() => {
+          if (notificationToDelete) {
+            handleDeleteNotification(notificationToDelete);
+          }
+          setShowDeleteConfirm(false);
+          setNotificationToDelete(null);
+        }}
+        onCancel={() => {
+          setShowDeleteConfirm(false);
+          setNotificationToDelete(null);
+        }}
+        isDanger
+      />
+
+      {/* 전체 알림 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={showDeleteAllConfirm}
+        title="전체 알림 삭제"
+        message="모든 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
+        confirmText="전체 삭제"
+        onConfirm={handleDeleteAllNotifications}
+        onCancel={() => setShowDeleteAllConfirm(false)}
+        isDanger
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import FontDropdown from "../components/FontDropdown";
 import AlignDropdown from "../components/AlignDropdown";
 import { useUser } from "../contexts/UserContext";
 import { AxiosError } from "axios";
+import ConfirmModal from "../components/ConfirmModal";
 
 interface Post {
   id: number;
@@ -29,6 +30,7 @@ export default function PostEditPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
@@ -43,9 +45,7 @@ export default function PostEditPage() {
           navigate("/login");
           return;
         }
-        const { data } = await api.get<Post>(`/posts/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const { data } = await api.get<Post>(`/posts/${id}`);
         setTitle(data.title);
         setContent(data.content);
         setTimeout(() => {
@@ -70,6 +70,10 @@ export default function PostEditPage() {
       alert("제목을 입력해주세요");
       return;
     }
+    setShowConfirmModal(true);
+  };
+
+  const handleEditConfirm = async () => {
     try {
       const payload = {
         title,
@@ -77,7 +81,6 @@ export default function PostEditPage() {
         autoSaved: false
       };
       await api.put(`/posts/${id}`, payload);
-      alert("수정이 완료되었습니다");
       navigate(`/postdetail/${id}`);
     } catch (error) {
       const err = error as AxiosError<{ message?: string }>;
@@ -112,7 +115,6 @@ export default function PostEditPage() {
     setItalic(document.queryCommandState("italic"));
   };
 
-  // 툴바 핸들러
   const handleFontChange = (font: string) => {
     saveSelection();
     setFont(font);
@@ -138,7 +140,6 @@ export default function PostEditPage() {
     handleCommand(`justify${align.charAt(0).toUpperCase() + align.slice(1)}`);
   };
 
-  // 본문 입력 핸들러
   const handleBodyInput = () => {
     setContent(editorRef.current?.innerHTML || "");
   };
@@ -147,92 +148,165 @@ export default function PostEditPage() {
     (!content || content === "<br>") &&
     (!editorRef.current || editorRef.current.innerText.trim() === "");
 
-  if (isLoading) return <div className="text-center py-8">불러오는 중...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-xl text-gray-600">불러오는 중...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-white via-purple-50 to-blue-50">
       {/* 헤더 */}
-      <div className="w-full bg-white py-4 px-10 shadow-md flex justify-start items-center">
-        <img
-          src={logo}
-          alt="MoodLog"
-          className="h-24 cursor-pointer"
-          onClick={() => navigate("/main")}
-        />
-      </div>
-      <div className="max-w-[1200px] mx-auto pt-6">
-        {/* 툴바 */}
-        <div className="flex items-center border-b border-gray-200 py-2 px-2 bg-white">
-          <FontDropdown value={font} onChange={handleFontChange} />
-          <input
-            type="number"
-            min={8}
-            max={72}
-            value={fontSize}
-            onChange={(e) => handleFontSizeChange(Number(e.target.value))}
-            className="ml-2 w-12 px-1 py-1 border rounded text-center bg-white"
-            style={{ fontSize: 16 }}
-            onFocus={saveSelection}
+      <div className="w-full bg-white/80 backdrop-blur-sm py-4 px-6 md:px-10 shadow-lg border-b border-purple-100 sticky top-0 z-50">
+        <div className="max-w-[1200px] mx-auto flex justify-between items-center">
+          <img
+            src={logo}
+            alt="MoodLog"
+            className="h-16 md:h-20 cursor-pointer transition-transform hover:scale-105"
+            onClick={() => navigate("/main")}
           />
-          <AlignDropdown value={align} onChange={handleAlignChange} />
           <button
-            className={`ml-2 px-2 py-1 border rounded font-bold transition-colors ${
-              bold ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-500"
-            }`}
-            onClick={() => handleCommand("bold")}
-            aria-pressed={bold}
-            type="button"
-          >
-            B
-          </button>
-          <button
-            className={`ml-2 px-2 py-1 border rounded italic transition-colors ${
-              italic ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-500"
-            }`}
-            onClick={() => handleCommand("italic")}
-            aria-pressed={italic}
-            type="button"
-          >
-            I
-          </button>
-          <button
-            className="ml-auto px-4 py-2 bg-black text-white rounded"
+            className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2 font-medium"
             onClick={handleEdit}
           >
-            수정 완료
+            <span>수정 완료</span>
           </button>
         </div>
+      </div>
 
-        {/* 본문 에디터 */}
-        <div className="flex justify-center mt-6">
-          <div className="w-[600px] min-h-[900px] border rounded bg-white flex flex-col">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="제목을 입력하세요"
-              className="border-b px-6 py-4 text-lg font-semibold text-gray-800 outline-none"
-            />
-            <div
-              ref={editorRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleBodyInput}
-              className="relative px-6 py-4 text-gray-800 flex-1 outline-none"
-              style={{ minHeight: 600 }}
-            >
-              {showPlaceholder && (
-                <span
-                  className="absolute left-6 top-4 text-gray-400 pointer-events-none select-none"
-                  style={{ userSelect: "none" }}
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-8">
+        {/* 에디터 컨테이너 */}
+        <div className="max-w-[700px] mx-auto bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-purple-100 overflow-hidden">
+          {/* 툴바 */}
+          <div className="border-b border-purple-100 p-3 bg-gradient-to-r from-purple-50/50 to-blue-50/50">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-purple-100 p-1">
+                <FontDropdown value={font} onChange={handleFontChange} />
+                <div className="w-px h-6 bg-purple-100"></div>
+                <input
+                  type="number"
+                  min={8}
+                  max={72}
+                  value={fontSize}
+                  onChange={(e) => handleFontSizeChange(Number(e.target.value))}
+                  className="w-14 px-2 py-1 text-center bg-transparent focus:outline-none"
+                  style={{ fontSize: 14 }}
+                  onFocus={saveSelection}
+                />
+              </div>
+              
+              <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-purple-100 p-1">
+                <AlignDropdown value={align} onChange={handleAlignChange} />
+              </div>
+
+              <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-purple-100 p-1">
+                <button
+                  className={`px-2.5 py-1 rounded font-bold transition-all ${
+                    bold
+                      ? "bg-purple-600 text-white"
+                      : "text-purple-600 hover:bg-purple-50"
+                  }`}
+                  onClick={() => handleCommand("bold")}
+                  aria-pressed={bold}
+                  type="button"
                 >
-                  게시글을 입력하세요
-                </span>
-              )}
+                  B
+                </button>
+                <button
+                  className={`px-2.5 py-1 rounded italic transition-all ${
+                    italic
+                      ? "bg-purple-600 text-white"
+                      : "text-purple-600 hover:bg-purple-50"
+                  }`}
+                  onClick={() => handleCommand("italic")}
+                  aria-pressed={italic}
+                  type="button"
+                >
+                  I
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 에디터 본문 */}
+          <div className="p-5">
+            {/* 제목 영역 */}
+            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-3 mb-4 shadow-sm border border-purple-100">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="제목을 입력하세요"
+                className="w-full text-xl md:text-2xl font-bold bg-transparent outline-none placeholder-gray-300 focus:placeholder-gray-400 transition-colors"
+                style={{
+                  background: "linear-gradient(to right, #7c3aed, #2563eb)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              />
+            </div>
+            
+            {/* 본문 영역 */}
+            <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-purple-100">
+              <div
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={handleBodyInput}
+                className="relative min-h-[400px] max-h-[600px] overflow-y-auto outline-none prose prose-sm prose-purple max-w-none"
+                style={{
+                  fontSize: `${fontSize}px`,
+                  fontFamily: font,
+                  textAlign: align as 'left' | 'center' | 'right' | 'justify',
+                }}
+              >
+                {showPlaceholder && (
+                  <span
+                    className="absolute left-0 top-0 text-gray-300 pointer-events-none select-none"
+                    style={{ userSelect: "none" }}
+                  >
+                    게시글을 입력하세요
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 플레이리스트 안내 메시지 */}
+            <div className="mt-6 bg-purple-50/50 backdrop-blur-sm rounded-xl p-4 border border-purple-100">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="21" cy="16" r="3" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    플레이리스트 안내
+                  </h3>
+                  <p className="mt-1 text-gray-600">
+                    게시글 수정 시에는 기존 플레이리스트가 유지되며 변경할 수 없습니다. 
+                    새로운 플레이리스트를 생성하시려면 새 게시글을 작성해 주세요.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* 수정 확인 모달 */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        title="게시글 수정"
+        message="수정된 내용을 저장하시겠습니까?"
+        confirmText="저장"
+        onConfirm={handleEditConfirm}
+        onCancel={() => setShowConfirmModal(false)}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useBeforeUnload } from "react-router-dom";
 import api from "../services/axiosInstance";
 import logo from "../assets/moodlog_logo_transparent.png";
 import FontDropdown from "../components/FontDropdown";
@@ -28,123 +28,49 @@ export default function PostPage() {
   const [italic, setItalic] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishingStep, setPublishingStep] = useState<'emotion' | 'playlist'>('emotion');
 
   const editorRef = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Range | null>(null);
-  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. 최신 임시글 불러오기
+  // 페이지 이탈 방지 처리
+  const hasUnsavedChanges = title.trim() || content.trim();
+
   useEffect(() => {
-    const loadLatestDraft = async () => {
-      try {
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-          alert("로그인이 필요합니다");
-          navigate("/login");
-          return;
-        }
-
-        // 기존 상태 초기화
-        setTitle("");
-        setContent("");
-        setCurrentDraftId(null);
-        if (editorRef.current) {
-          editorRef.current.innerHTML = "";
-        }
-
-        const { data } = await api.get<Post[]>("/posts", {
-          params: { autoSaved: true },
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        const myDrafts = data
-          .filter(post => post.autoSaved && post.authorName === currentUser?.username)
-          .sort((a, b) => b.id - a.id);
-
-        if (myDrafts.length > 0) {
-          const latestDraft = myDrafts[0];
-          const loadDraft = window.confirm(
-            "임시저장된 글이 있습니다. 불러오시겠습니까?"
-          );
-
-          if (loadDraft) {
-            setTitle(latestDraft.title);
-            setContent(latestDraft.content);
-            if (editorRef.current) {
-              editorRef.current.innerHTML = latestDraft.content;
-            }
-            setCurrentDraftId(latestDraft.id);
-
-            // 오래된 임시저장 글 삭제
-            await Promise.all(
-              myDrafts.slice(1).map(draft =>
-                api.delete(`/posts/${draft.id}`, {
-                  headers: { Authorization: `Bearer ${token}` }
-                })
-              )
-            );
-          } else {
-            // 임시저장 글을 불러오지 않을 경우 모든 임시저장 글 삭제
-            await Promise.all(
-              myDrafts.map(draft =>
-                api.delete(`/posts/${draft.id}`, {
-                  headers: { Authorization: `Bearer ${token}` }
-                })
-              )
-            );
-          }
-        }
-      } catch (error) {
-        console.error("임시 저장글 불러오기 실패:", error);
-        // 에러 발생 시에도 상태 초기화
-        setTitle("");
-        setContent("");
-        setCurrentDraftId(null);
-        if (editorRef.current) {
-          editorRef.current.innerHTML = "";
-        }
-      } finally {
-        setIsLoading(false);
+    // 브라우저 새로고침, 창 닫기 등 처리
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
       }
     };
 
-    loadLatestDraft();
-  }, [currentUser, navigate]);
-
-  // 2. 자동 저장 기능
-  useEffect(() => {
-    const autoSave = async () => {
-      if (!currentUser?.username || (!title && !content)) return;
-
-      try {
-        const payload = {
-          title: title || "임시 저장 제목",
-          content: content || " ",
-          autoSaved: true
-        };
-
-        if (currentDraftId) {
-          await api.put(`/posts/${currentDraftId}`, payload);
-        } else {
-          const { data } = await api.post("/posts", payload);
-          setCurrentDraftId(data.id);
-        }
-      } catch (error) {
-        console.error("자동 저장 실패:", error);
+    // React Router 네비게이션 처리
+    const handleNavigation = (e: PopStateEvent) => {
+      if (hasUnsavedChanges && !window.confirm('작성 중인 내용이 있습니다. 페이지를 나가시겠습니까?')) {
+        e.preventDefault();
+        window.history.pushState(null, '', window.location.pathname);
       }
     };
 
-    autoSaveIntervalRef.current = setInterval(autoSave, 5000);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handleNavigation);
+
     return () => {
-      if (autoSaveIntervalRef.current) clearInterval(autoSaveIntervalRef.current);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handleNavigation);
     };
-  }, [title, content, currentDraftId, currentUser]);
+  }, [hasUnsavedChanges]);
 
-  // 3. 게시하기 버튼 클릭
+  // 로고 클릭이나 다른 페이지로 이동하는 경우 처리
+  const handleNavigate = (to: string) => {
+    if (!hasUnsavedChanges || window.confirm('작성 중인 내용이 있습니다. 페이지를 나가시겠습니까?')) {
+      navigate(to);
+    }
+  };
+
+  // 게시하기 버튼 클릭
   const handlePublish = async () => {
     if (!title.trim()) {
       alert("제목을 입력해주세요");
@@ -155,41 +81,14 @@ export default function PostPage() {
     setPublishingStep('emotion');
 
     try {
-      // ⭐️ 자동저장 중단!
-      if (autoSaveIntervalRef.current) {
-        clearInterval(autoSaveIntervalRef.current);
-      }
-
       const payload = {
         title,
         content,
         autoSaved: false
       };
 
-      let postId: number | null = null;
-
-      if (currentDraftId) {
-        await api.put(`/posts/${currentDraftId}`, payload);
-        postId = currentDraftId;
-      } else {
-        await api.post("/posts", payload);
-
-        const { data: posts } = await api.get<Post[]>("/posts");
-        const myPosts = posts
-          .filter(post => post.authorName === currentUser?.username)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        if (myPosts.length > 0) {
-          postId = myPosts[0].id;
-        }
-      }
-
-      if (!postId) {
-        alert("게시글 ID를 찾을 수 없습니다.");
-        setIsPublishing(false);
-        return;
-      }
-
+      const { data: postId } = await api.post<number>("/posts", payload);
+      
       // 감정 분석 단계를 보여주기 위한 딜레이
       await new Promise(resolve => setTimeout(resolve, 4000));
       
@@ -281,8 +180,6 @@ export default function PostPage() {
 특히 '밤편지'를 들으면서 걸었을 때는 
 마음이 따뜻해지는 기분이었습니다...`;
 
-  if (isLoading) return <div className="text-center py-8">불러오는 중...</div>;
-
   if (isPublishing) {
     return (
       <div className="fixed inset-0 bg-gradient-to-b from-white via-purple-50 to-blue-50 flex flex-col items-center justify-center z-50">
@@ -341,7 +238,7 @@ export default function PostPage() {
             src={logo}
             alt="MoodLog"
             className="h-16 md:h-20 cursor-pointer transition-transform hover:scale-105"
-            onClick={() => navigate("/main")}
+            onClick={() => handleNavigate("/main")}
           />
           <button
             className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all hover:scale-105 shadow-md hover:shadow-lg flex items-center gap-2 font-medium"

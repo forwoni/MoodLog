@@ -84,33 +84,28 @@ const OtherUserPostCard: React.FC<OtherUserPostCardProps> = ({
       </p>
 
       {/* 하단 정보 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1 text-rose-500">
+          <div className="flex items-center gap-1 text-sm text-rose-500">
             <Heart size={16} className="fill-current" />
-            <span className="text-sm font-medium">{likeCount}</span>
+            <span>{likeCount}</span>
           </div>
-          <div className="flex items-center gap-1 text-blue-500">
+          <div className="flex items-center gap-1 text-sm text-blue-500">
             <MessageCircle size={16} />
-            <span className="text-sm font-medium">{comments.length}</span>
+            <span>{comments.length}</span>
           </div>
-          <div className="flex items-center gap-1 text-emerald-500">
+          <div className="flex items-center gap-1 text-sm text-purple-500">
             <Eye size={16} />
-            <span className="text-sm font-medium">{viewCount}</span>
+            <span>{viewCount}</span>
           </div>
         </div>
-
-        {/* 플레이리스트 버튼 */}
         {playlist && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onPlaylistClick(playlist);
-            }}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-medium hover:from-purple-600 hover:to-blue-600 transition-all"
+            onClick={(e) => onPlaylistClick(playlist)}
+            className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 transition-colors"
           >
-            <Music size={14} />
-            플레이리스트
+            <Music size={16} />
+            <span>{playlist.tracks.length}곡</span>
           </button>
         )}
       </div>
