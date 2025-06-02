@@ -2,6 +2,7 @@ package com.DevStream.MoodLogBe.post.domain;
 
 import com.DevStream.MoodLogBe.auth.domain.User;
 import com.DevStream.MoodLogBe.comment.domain.Comment;
+import com.DevStream.MoodLogBe.post.domain.PostView;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,22 +12,25 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Setter
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Post {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
     private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name= "user_id")
     private User author;
+    
     private String content;
-    private Boolean autoSaved;
+    
+    @Builder.Default
+    private Boolean autoSaved = false;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -35,15 +39,23 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Column(nullable = false)
+    @Builder.Default
     private int viewCount = 0;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<PostLike> likes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PostView> views = new ArrayList<>();
+
     @Column(nullable = false)
+    @Builder.Default
     private int likeCount = 0;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -64,6 +76,7 @@ public class Post {
         this.content = content;
         this.autoSaved = autoSaved;
     }
+
     public void increaseViewCount() {
         this.viewCount++;
     }

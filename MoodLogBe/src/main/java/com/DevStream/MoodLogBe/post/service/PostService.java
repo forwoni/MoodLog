@@ -83,31 +83,22 @@ public class PostService {
         tracks.forEach(track -> track.setPlaylist(playlist));
         playlist.setTracks(tracks);
 
-        // 4) 게시글 엔티티 생성
-        Post post = new Post(
-                null,
-                dto.title(),
-                user,
-                dto.content(),
-                dto.autoSaved(),
-                null, // createdAt
-                null, // updatedAt
-                0,
-                new ArrayList<>(),
-                new ArrayList<>(),
-                0,
-                null
-        );
+        // 4) 게시글 엔티티 생성 및 저장
+        Post post = Post.builder()
+                .title(dto.title())
+                .author(user)
+                .content(dto.content())
+                .autoSaved(dto.autoSaved())
+                .playlist(playlist)
+                .build();
 
         // 5) 관계 설정 및 저장
-        postRepository.save(post);
-        playlist.setPost(post);
-        post.setPlaylist(playlist);
+        Post savedPost = postRepository.save(post);
+        playlist.setPost(savedPost);
 
         playlistRepository.save(playlist);
         trackRepository.saveAll(tracks);
 
-        Post savedPost = postRepository.save(post);
         return savedPost.getId();
     }
 
