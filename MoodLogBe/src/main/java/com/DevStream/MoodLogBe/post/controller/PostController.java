@@ -5,6 +5,7 @@ import com.DevStream.MoodLogBe.config.CustomUserDetails;
 import com.DevStream.MoodLogBe.post.dto.PostRequestDto;
 import com.DevStream.MoodLogBe.post.dto.PostResponseDto;
 import com.DevStream.MoodLogBe.post.service.PostService;
+import com.DevStream.MoodLogBe.post.service.PostLikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
@@ -21,13 +23,14 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
+    private final PostLikeService postLikeService;
 
     @PostMapping
-    public ResponseEntity<Void> create(@RequestBody PostRequestDto dto) {
+    public ResponseEntity<Long> create(@RequestBody PostRequestDto dto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        postService.create(dto, userDetails.getUser());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        Long postId = postService.create(dto, userDetails.getUser());
+        return ResponseEntity.status(HttpStatus.CREATED).body(postId);
     }
 
     @GetMapping
@@ -36,8 +39,12 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostResponseDto> get(@PathVariable Long id) {
-        return ResponseEntity.ok(postService.getById(id));
+    public ResponseEntity<PostResponseDto> getPost(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletRequest request) {
+        PostResponseDto post = postService.getById(id, request, userDetails.getUser());
+        return ResponseEntity.ok(post);
     }
 
     @PutMapping("/{id}")
